@@ -17,7 +17,8 @@ class BillingSyncRepository(
   private val syncEnabled: Boolean,
   private val httpClient: OkHttpClient = OkHttpClient(),
   private val json: Json = Json { encodeDefaults = true },
-) {
+) : BillingSyncContract {
+  override
   suspend fun syncPurchase(purchase: StorePurchase): BillingSyncResult {
     if (!syncEnabled) {
       return BillingSyncResult.Skipped
