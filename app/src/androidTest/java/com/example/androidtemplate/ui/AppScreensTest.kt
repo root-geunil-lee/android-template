@@ -106,6 +106,24 @@ class AppScreensTest {
   }
 
   @Test
+  fun authMethodsScreen_talkBackLabelsMatchButtonText() {
+    composeRule.setContent {
+      AuthMethodsScreen(
+        oauthState = OAuthFlowState.Idle,
+        onApple = {},
+        onGoogle = {},
+        onKakao = {},
+        onContinueWithEmail = {},
+      )
+    }
+
+    composeRule.onNodeWithContentDescription("Continue with Google").assertHasClickAction()
+    composeRule.onNodeWithContentDescription("Continue with Apple").assertHasClickAction()
+    composeRule.onNodeWithContentDescription("Continue with Kakao").assertHasClickAction()
+    composeRule.onNodeWithContentDescription("Continue with Email").assertHasClickAction()
+  }
+
+  @Test
   fun otpVerifyScreen_rendersSixAccessibleSlots_andAcceptsPastedDigitsOnly() {
     composeRule.setContent {
       OtpVerifyScreen(

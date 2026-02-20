@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -78,7 +79,7 @@ fun AuthMethodsScreen(
       .testTag("auth_methods_scroll"),
     verticalArrangement = Arrangement.Top,
   ) {
-    Text("Sign in", style = MaterialTheme.typography.displayLarge)
+    Text("Sign in", style = MaterialTheme.typography.headlineMedium)
     if (!oauthMessage.isNullOrBlank()) {
       Spacer(Modifier.height(8.dp))
       Text(
@@ -98,6 +99,13 @@ fun AuthMethodsScreen(
         onClick = onGoogle,
         enabled = !isBusy,
         shape = RoundedCornerShape(24.dp),
+        elevation = ButtonDefaults.buttonElevation(
+          defaultElevation = 1.dp,
+          pressedElevation = 1.dp,
+          focusedElevation = 1.dp,
+          hoveredElevation = 1.dp,
+          disabledElevation = 0.dp,
+        ),
         colors = ButtonDefaults.buttonColors(
           containerColor = MaterialTheme.colorScheme.primary,
           contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -108,6 +116,7 @@ fun AuthMethodsScreen(
         modifier = Modifier
           .fillMaxWidth()
           .heightIn(min = 56.dp)
+          .semantics { contentDescription = "Continue with Google" }
           .testTag("auth_provider_0_google"),
       ) {
         AuthProviderLabel(
@@ -122,7 +131,14 @@ fun AuthMethodsScreen(
         onClick = onApple,
         enabled = !isBusy,
         shape = RoundedCornerShape(24.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        elevation = ButtonDefaults.buttonElevation(
+          defaultElevation = 0.dp,
+          pressedElevation = 0.dp,
+          focusedElevation = 0.dp,
+          hoveredElevation = 0.dp,
+          disabledElevation = 0.dp,
+        ),
         colors = ButtonDefaults.outlinedButtonColors(
           contentColor = MaterialTheme.colorScheme.onSurface,
           disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -131,6 +147,7 @@ fun AuthMethodsScreen(
         modifier = Modifier
           .fillMaxWidth()
           .heightIn(min = 56.dp)
+          .semantics { contentDescription = "Continue with Apple" }
           .testTag("auth_provider_1_apple"),
       ) {
         AuthProviderLabel(
@@ -145,9 +162,16 @@ fun AuthMethodsScreen(
         onClick = onKakao,
         enabled = !isBusy,
         shape = RoundedCornerShape(24.dp),
+        elevation = ButtonDefaults.buttonElevation(
+          defaultElevation = 0.dp,
+          pressedElevation = 0.dp,
+          focusedElevation = 0.dp,
+          hoveredElevation = 0.dp,
+          disabledElevation = 0.dp,
+        ),
         colors = ButtonDefaults.filledTonalButtonColors(
-          containerColor = MaterialTheme.colorScheme.primaryContainer,
-          contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+          containerColor = MaterialTheme.colorScheme.surfaceVariant,
+          contentColor = MaterialTheme.colorScheme.onSurface,
           disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
           disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         ),
@@ -155,13 +179,14 @@ fun AuthMethodsScreen(
         modifier = Modifier
           .fillMaxWidth()
           .heightIn(min = 56.dp)
+          .semantics { contentDescription = "Continue with Kakao" }
           .testTag("auth_provider_2_kakao"),
       ) {
         AuthProviderLabel(
           badge = "K",
           text = "Continue with Kakao",
-          badgeContainerColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.14f),
-          badgeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+          badgeContainerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+          badgeContentColor = MaterialTheme.colorScheme.onSurface,
         )
       }
 
@@ -169,21 +194,29 @@ fun AuthMethodsScreen(
         onClick = onContinueWithEmail,
         enabled = !isBusy,
         shape = RoundedCornerShape(24.dp),
+        elevation = ButtonDefaults.buttonElevation(
+          defaultElevation = 0.dp,
+          pressedElevation = 0.dp,
+          focusedElevation = 0.dp,
+          hoveredElevation = 0.dp,
+          disabledElevation = 0.dp,
+        ),
         colors = ButtonDefaults.textButtonColors(
-          contentColor = MaterialTheme.colorScheme.primary,
+          contentColor = MaterialTheme.colorScheme.onSurface,
           disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         ),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
         modifier = Modifier
           .fillMaxWidth()
           .heightIn(min = 56.dp)
+          .semantics { contentDescription = "Continue with Email" }
           .testTag("auth_provider_3_email"),
       ) {
         AuthProviderLabel(
           badge = "@",
           text = "Continue with Email",
           badgeContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-          badgeContentColor = MaterialTheme.colorScheme.primary,
+          badgeContentColor = MaterialTheme.colorScheme.onSurface,
         )
       }
     }
