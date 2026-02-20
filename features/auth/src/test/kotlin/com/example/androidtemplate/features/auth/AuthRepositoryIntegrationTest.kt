@@ -50,11 +50,16 @@ class AuthRepositoryIntegrationTest {
 
   @Test
   fun verifyOtp_postsToImmutableEndpoint() = runBlocking {
-    server.enqueue(MockResponse().setResponseCode(200))
+    server.enqueue(
+      MockResponse()
+        .setResponseCode(200)
+        .setBody("{\"access_token\":\"token-abc\"}"),
+    )
 
+    val sessionStore = InMemorySessionStore()
     val repository = AuthRepository(
       baseUrl = server.url("/").toString(),
-      sessionStore = InMemorySessionStore(),
+      sessionStore = sessionStore,
     )
 
     val result = repository.verifyOtp(email = "user@example.com", code = "123456")
@@ -68,6 +73,7 @@ class AuthRepositoryIntegrationTest {
     val payload = Json.parseToJsonElement(nonNullRequest.body.readUtf8()).jsonObject
     assertThat(payload["email"]?.toString()).isEqualTo("\"user@example.com\"")
     assertThat(payload["token"]?.toString()).isEqualTo("\"123456\"")
+    assertThat(sessionStore.savedAccessToken).isEqualTo("token-abc")
   }
 
   @Test
@@ -94,8 +100,14 @@ class AuthRepositoryIntegrationTest {
 
   private class InMemorySessionStore(private var token: String? = null) : SessionStore {
     var cleared: Boolean = false
+    var savedAccessToken: String? = null
 
     override suspend fun accessToken(): String? = token
+
+    override suspend fun saveAccessToken(token: String) {
+      savedAccessToken = token
+      this.token = token
+    }
 
     override suspend fun clearSession() {
       cleared = true

@@ -7,6 +7,9 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -26,7 +29,19 @@ class AuthRepository(
 
   override suspend fun verifyOtp(email: String, code: String): AuthResult {
     val payload = json.encodeToString(OtpVerifyRequest(email = email, token = code, type = "email"))
-    return postWithoutAuth(AndroidAuthContract.VERIFY_ENDPOINT, payload)
+    val response = executePostWithoutAuth(AndroidAuthContract.VERIFY_ENDPOINT, payload)
+
+    return if (response.code in 200..299) {
+      response.body
+        ?.let(::extractAccessToken)
+        ?.takeIf { it.isNotBlank() }
+        ?.let { token -> sessionStore.saveAccessToken(token) }
+      AuthResult.Success
+    } else if (response.code == 429) {
+      AuthResult.RateLimited(response.retryAfterSeconds ?: 30)
+    } else {
+      AuthResult.Failure("Request failed (${response.code})")
+    }
   }
 
   override suspend fun logout(): AuthResult {
@@ -60,19 +75,7 @@ class AuthRepository(
   }
 
   private suspend fun postWithoutAuth(path: String, payload: String): AuthResult {
-    val request = Request.Builder()
-      .url(baseUrl.trimEnd('/') + path)
-      .post(payload.toRequestBody("application/json".toMediaType()))
-      .build()
-
-    val response = withContext(Dispatchers.IO) {
-      httpClient.newCall(request).execute().use { networkResponse ->
-        HttpResponse(
-          code = networkResponse.code,
-          retryAfterSeconds = networkResponse.header("Retry-After")?.toIntOrNull(),
-        )
-      }
-    }
+    val response = executePostWithoutAuth(path, payload)
 
     return if (response.code in 200..299) {
       AuthResult.Success
@@ -82,12 +85,40 @@ class AuthRepository(
       AuthResult.Failure("Request failed (${response.code})")
     }
   }
+
+  private suspend fun executePostWithoutAuth(path: String, payload: String): HttpResponse {
+    val request = Request.Builder()
+      .url(baseUrl.trimEnd('/') + path)
+      .post(payload.toRequestBody("application/json".toMediaType()))
+      .build()
+
+    val response = withContext(Dispatchers.IO) {
+      httpClient.newCall(request).execute().use { networkResponse ->
+        HttpResponse(
+          code = networkResponse.code,
+          body = networkResponse.body?.string(),
+          retryAfterSeconds = networkResponse.header("Retry-After")?.toIntOrNull(),
+        )
+      }
+    }
+    return response
+  }
 }
 
 private data class HttpResponse(
   val code: Int,
+  val body: String? = null,
   val retryAfterSeconds: Int? = null,
 )
+
+private fun extractAccessToken(body: String): String? {
+  return runCatching {
+    Json.parseToJsonElement(body)
+      .jsonObject["access_token"]
+      ?.jsonPrimitive
+      ?.contentOrNull
+  }.getOrNull()
+}
 
 @Serializable
 private data class OtpRequest(
