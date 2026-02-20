@@ -24,6 +24,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -55,6 +57,7 @@ import com.example.androidtemplate.features.mypage.PurchaseHistoryScreen
 import com.example.androidtemplate.features.mypage.SubscriptionScreen
 import com.example.androidtemplate.features.mypage.TransactionDetailScreen
 import com.example.androidtemplate.features.mypage.EditProfileScreen
+import com.example.androidtemplate.core.ui.effectiveHorizontalPaddingPx
 import kotlinx.coroutines.launch
 
 @Composable
@@ -81,6 +84,7 @@ private fun UnauthenticatedApp(
   onAuthenticated: () -> Unit,
 ) {
   val context = LocalContext.current
+  val horizontalPadding = rememberHorizontalContentPadding()
   val customTabsIntent = remember {
     CustomTabsIntent.Builder()
       .setShowTitle(true)
@@ -124,9 +128,9 @@ private fun UnauthenticatedApp(
     startDestination = AppRoutes.AUTH_METHODS,
     modifier = Modifier
       .fillMaxSize()
-      .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+      .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
       .imePadding()
-      .padding(horizontal = 20.dp),
+      .padding(horizontal = horizontalPadding),
   ) {
     composable(AppRoutes.AUTH_METHODS) {
       AuthMethodsScreen(
@@ -187,6 +191,7 @@ private fun AuthenticatedApp(
   val navController = rememberNavController()
   val coroutineScope = rememberCoroutineScope()
   val snackbarHostState = remember { SnackbarHostState() }
+  val horizontalPadding = rememberHorizontalContentPadding()
   var paywallResultMessage by rememberSaveable { mutableStateOf<String?>(null) }
 
   val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
@@ -195,7 +200,7 @@ private fun AuthenticatedApp(
   Scaffold(
     modifier = Modifier
       .fillMaxSize()
-      .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+      .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
       .imePadding(),
     snackbarHost = { SnackbarHost(snackbarHostState) },
     bottomBar = {
@@ -222,7 +227,7 @@ private fun AuthenticatedApp(
       startDestination = AppRoutes.HOME,
       modifier = Modifier
         .padding(innerPadding)
-        .padding(horizontal = 20.dp),
+        .padding(horizontal = horizontalPadding),
     ) {
       composable(AppRoutes.HOME) {
         HomeScreen(
@@ -324,4 +329,17 @@ private fun AuthenticatedApp(
     }
   }
 
+}
+
+@Composable
+private fun rememberHorizontalContentPadding() = with(LocalDensity.current) {
+  val layoutDirection = LocalLayoutDirection.current
+  val baselinePx = 20.dp.roundToPx()
+  val safeInsetLeftPx = WindowInsets.safeDrawing.getLeft(this, layoutDirection)
+  val safeInsetRightPx = WindowInsets.safeDrawing.getRight(this, layoutDirection)
+  effectiveHorizontalPaddingPx(
+    baselinePx = baselinePx,
+    safeInsetLeftPx = safeInsetLeftPx,
+    safeInsetRightPx = safeInsetRightPx,
+  ).toDp()
 }
