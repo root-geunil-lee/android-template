@@ -10,6 +10,7 @@ kotlin {
 dependencies {
   implementation(project(":core:contracts"))
   implementation(project(":core:network"))
+  implementation(project(":core:ui"))
   implementation(libs.okhttp)
   implementation(libs.serialization.json)
   implementation(libs.coroutines.core)

@@ -28,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.androidtemplate.core.contracts.AndroidBillingContract
 import com.example.androidtemplate.core.ui.DesignTokens
+import com.example.androidtemplate.core.ui.UiEvent
+import com.example.androidtemplate.core.ui.UiState
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,31 +40,51 @@ fun PaywallSheetRoute(
 ) {
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   val coroutineScope = rememberCoroutineScope()
-  val useCase = remember {
-    PaywallFlowUseCase(
-      billingStore = DemoBillingStore(),
-      syncService = NoopBillingSyncService,
+  val uiStore = remember {
+    PaywallUiStore(
+      useCase = PaywallFlowUseCase(
+        billingStore = DemoBillingStore(),
+        syncService = NoopBillingSyncService,
+      ),
     )
   }
 
-  var state by remember { mutableStateOf<PaywallState>(PaywallState.Idle) }
+  var state by remember { mutableStateOf<UiState<PaywallUiModel>>(UiState.Idle) }
   var cachedProducts by remember { mutableStateOf(emptyList<BillingProduct>()) }
+  var transientMessage by remember { mutableStateOf<String?>(null) }
 
   LaunchedEffect(Unit) {
-    state = useCase.loadProducts()
+    uiStore.load()
+    state = uiStore.state
   }
 
-  if (state is PaywallState.Ready) {
-    cachedProducts = (state as PaywallState.Ready).products
+  LaunchedEffect(uiStore) {
+    uiStore.events.collect { event ->
+      when (event) {
+        is UiEvent.DismissSheet -> {
+          val result = (uiStore.state as? UiState.Success<PaywallUiModel>)?.data?.lastResult
+          if (result != null) {
+            onResult(result)
+          }
+          onClose()
+        }
+        is UiEvent.ShowSnackbar -> transientMessage = event.message
+        else -> Unit
+      }
+    }
   }
 
-  val products = if (state is PaywallState.Ready) {
-    (state as PaywallState.Ready).products
+  if (state is UiState.Success) {
+    cachedProducts = (state as UiState.Success<PaywallUiModel>).data.products
+  }
+
+  val products = if (state is UiState.Success) {
+    (state as UiState.Success<PaywallUiModel>).data.products
   } else {
     cachedProducts
   }
-  val isProcessing = state is PaywallState.LoadingProducts || state is PaywallState.Processing
-  val resultMessage = (state as? PaywallState.Ready)?.lastResult?.toUserMessage()
+  val isProcessing = state == UiState.Loading
+  val resultMessage = (state as? UiState.Success<PaywallUiModel>)?.data?.resultMessage ?: transientMessage
 
   BackHandler {
     onResult(PaywallResult.Cancelled)
@@ -93,12 +115,9 @@ fun PaywallSheetRoute(
         Button(
           onClick = {
             coroutineScope.launch {
-              state = useCase.purchase(product.id)
-              val result = (state as? PaywallState.Ready)?.lastResult
-              if (result is PaywallResult.Purchased || result is PaywallResult.Restored) {
-                onResult(result)
-                onClose()
-              }
+              transientMessage = null
+              uiStore.purchase(product.id)
+              state = uiStore.state
             }
           },
           enabled = !isProcessing,
@@ -111,12 +130,9 @@ fun PaywallSheetRoute(
       Button(
         onClick = {
           coroutineScope.launch {
-            state = useCase.restorePurchases()
-            val result = (state as? PaywallState.Ready)?.lastResult
-            if (result is PaywallResult.Restored) {
-              onResult(result)
-              onClose()
-            }
+            transientMessage = null
+            uiStore.restore()
+            state = uiStore.state
           }
         },
         enabled = !isProcessing,
@@ -145,26 +161,6 @@ private fun planLabel(productId: String): String = when (productId) {
   "remove_ads" -> "Remove ads"
   "lifetime" -> "Buy lifetime"
   else -> productId
-}
-
-private fun PaywallResult.toUserMessage(): String = when (this) {
-  is PaywallResult.Purchased -> {
-    if (syncStatus == PaywallSyncStatus.Synced) {
-      "Purchase completed: $productId"
-    } else {
-      "Purchase completed, but sync failed: $productId"
-    }
-  }
-  is PaywallResult.Restored -> {
-    if (syncStatus == PaywallSyncStatus.Synced) {
-      "Restored $count purchase(s)"
-    } else {
-      "Restored $count purchase(s), but sync failed"
-    }
-  }
-  PaywallResult.Cancelled -> "Purchase cancelled"
-  PaywallResult.Pending -> "Purchase is pending"
-  is PaywallResult.Failed -> message
 }
 
 private class DemoBillingStore : BillingStoreContract {
