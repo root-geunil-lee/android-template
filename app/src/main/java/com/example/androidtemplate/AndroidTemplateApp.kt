@@ -39,6 +39,7 @@ import com.example.androidtemplate.features.auth.OtpAuthUseCase
 import com.example.androidtemplate.features.auth.OtpFlowState
 import com.example.androidtemplate.features.auth.OtpVerifyScreen
 import com.example.androidtemplate.features.billing.PaywallResult
+import com.example.androidtemplate.features.billing.PaywallSyncStatus
 import com.example.androidtemplate.features.billing.PaywallSheetRoute
 import com.example.androidtemplate.features.home.HomeScreen
 import com.example.androidtemplate.features.mypage.MyPageRoute
@@ -171,8 +172,20 @@ private fun AuthenticatedApp(onLogout: () -> Unit) {
           onClose = { navController.popBackStack() },
           onResult = { result ->
             paywallResultMessage = when (result) {
-              is PaywallResult.Purchased -> "Purchased: ${result.productId}"
-              is PaywallResult.Restored -> "Restored ${result.count} purchase(s)"
+              is PaywallResult.Purchased -> {
+                if (result.syncStatus == PaywallSyncStatus.Synced) {
+                  "Purchased: ${result.productId}"
+                } else {
+                  "Purchased: ${result.productId} (sync failed)"
+                }
+              }
+              is PaywallResult.Restored -> {
+                if (result.syncStatus == PaywallSyncStatus.Synced) {
+                  "Restored ${result.count} purchase(s)"
+                } else {
+                  "Restored ${result.count} purchase(s) (sync failed)"
+                }
+              }
               PaywallResult.Cancelled -> "Purchase cancelled"
               PaywallResult.Pending -> "Purchase pending"
               is PaywallResult.Failed -> result.message

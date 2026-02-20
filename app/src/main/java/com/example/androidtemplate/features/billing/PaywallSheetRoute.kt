@@ -147,8 +147,20 @@ private fun planLabel(productId: String): String = when (productId) {
 }
 
 private fun PaywallResult.toUserMessage(): String = when (this) {
-  is PaywallResult.Purchased -> "Purchase completed: $productId"
-  is PaywallResult.Restored -> "Restored $count purchase(s)"
+  is PaywallResult.Purchased -> {
+    if (syncStatus == PaywallSyncStatus.Synced) {
+      "Purchase completed: $productId"
+    } else {
+      "Purchase completed, but sync failed: $productId"
+    }
+  }
+  is PaywallResult.Restored -> {
+    if (syncStatus == PaywallSyncStatus.Synced) {
+      "Restored $count purchase(s)"
+    } else {
+      "Restored $count purchase(s), but sync failed"
+    }
+  }
   PaywallResult.Cancelled -> "Purchase cancelled"
   PaywallResult.Pending -> "Purchase is pending"
   is PaywallResult.Failed -> message
