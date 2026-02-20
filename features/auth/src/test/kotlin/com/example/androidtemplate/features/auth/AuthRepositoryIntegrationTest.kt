@@ -1,0 +1,105 @@
+package com.example.androidtemplate.features.auth
+
+import com.example.androidtemplate.core.contracts.AndroidAuthContract
+import com.example.androidtemplate.core.storage.SessionStore
+import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
+
+class AuthRepositoryIntegrationTest {
+  private lateinit var server: MockWebServer
+
+  @Before
+  fun setUp() {
+    server = MockWebServer()
+    server.start()
+  }
+
+  @After
+  fun tearDown() {
+    server.shutdown()
+  }
+
+  @Test
+  fun requestOtp_postsToImmutableEndpoint() = runBlocking {
+    server.enqueue(MockResponse().setResponseCode(200))
+
+    val repository = AuthRepository(
+      baseUrl = server.url("/").toString(),
+      sessionStore = InMemorySessionStore(),
+    )
+
+    val result = repository.requestOtp("user@example.com")
+
+    assertThat(result).isEqualTo(AuthResult.Success)
+    val request = server.takeRequest(2, TimeUnit.SECONDS)
+    assertThat(request).isNotNull()
+    val nonNullRequest = request!!
+    assertThat(nonNullRequest.path).isEqualTo(AndroidAuthContract.OTP_ENDPOINT)
+
+    val payload = Json.parseToJsonElement(nonNullRequest.body.readUtf8()).jsonObject
+    assertThat(payload["email"]?.toString()).isEqualTo("\"user@example.com\"")
+  }
+
+  @Test
+  fun verifyOtp_postsToImmutableEndpoint() = runBlocking {
+    server.enqueue(MockResponse().setResponseCode(200))
+
+    val repository = AuthRepository(
+      baseUrl = server.url("/").toString(),
+      sessionStore = InMemorySessionStore(),
+    )
+
+    val result = repository.verifyOtp(email = "user@example.com", code = "123456")
+
+    assertThat(result).isEqualTo(AuthResult.Success)
+    val request = server.takeRequest(2, TimeUnit.SECONDS)
+    assertThat(request).isNotNull()
+    val nonNullRequest = request!!
+    assertThat(nonNullRequest.path).isEqualTo(AndroidAuthContract.VERIFY_ENDPOINT)
+
+    val payload = Json.parseToJsonElement(nonNullRequest.body.readUtf8()).jsonObject
+    assertThat(payload["email"]?.toString()).isEqualTo("\"user@example.com\"")
+    assertThat(payload["token"]?.toString()).isEqualTo("\"123456\"")
+  }
+
+  @Test
+  fun logout_postsToImmutableEndpointAndClearsSession() = runBlocking {
+    server.enqueue(MockResponse().setResponseCode(200))
+    val sessionStore = InMemorySessionStore(token = "access-token")
+
+    val repository = AuthRepository(
+      baseUrl = server.url("/").toString(),
+      sessionStore = sessionStore,
+    )
+
+    val result = repository.logout()
+
+    assertThat(result).isEqualTo(AuthResult.Success)
+    assertThat(sessionStore.cleared).isTrue()
+
+    val request = server.takeRequest(2, TimeUnit.SECONDS)
+    assertThat(request).isNotNull()
+    val nonNullRequest = request!!
+    assertThat(nonNullRequest.path).isEqualTo(AndroidAuthContract.LOGOUT_ENDPOINT)
+    assertThat(nonNullRequest.getHeader("Authorization")).isEqualTo("Bearer access-token")
+  }
+
+  private class InMemorySessionStore(private var token: String? = null) : SessionStore {
+    var cleared: Boolean = false
+
+    override suspend fun accessToken(): String? = token
+
+    override suspend fun clearSession() {
+      cleared = true
+      token = null
+    }
+  }
+}
