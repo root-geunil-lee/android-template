@@ -285,15 +285,15 @@ root
   3. refactor while keeping tests green
 
 ## 12. PR Checklist
-- [ ] iOS parity preserved for feature, flow, and state transitions
-- [ ] Product IDs unchanged (`monthly`, `annual`, `remove_ads`, `lifetime`)
-- [ ] Endpoints/payload fields unchanged
-- [ ] IA placement unchanged (My Page/Subscription/Purchase History/Danger Zone)
-- [ ] Edge-to-edge and insets rules applied on all affected screens
-- [ ] Predictive back order implemented (sheet > dialog > pop > exit)
-- [ ] Dialog/sheet behavior matches contract
+- [x] iOS parity preserved for feature, flow, and state transitions
+- [x] Product IDs unchanged (`monthly`, `annual`, `remove_ads`, `lifetime`)
+- [x] Endpoints/payload fields unchanged
+- [x] IA placement unchanged (My Page/Subscription/Purchase History/Danger Zone)
+- [x] Edge-to-edge and insets rules applied on all affected screens
+- [x] Predictive back order implemented (sheet > dialog > pop > exit)
+- [x] Dialog/sheet behavior matches contract
 - [ ] A11y baseline passed (48dp, TalkBack, font scaling)
-- [ ] Per-PR test minimum met (unit + integration + UI)
+- [x] Per-PR test minimum met (unit + integration + UI)
 
 ## 13. Non-goals
 - Redesigning iOS information architecture.
@@ -307,4 +307,3 @@ root
 - Business logic inside Composable functions.
 - Storing tokens in plain SharedPreferences.
 - Changing ID/endpoint/payload names to fit local implementation.
-
