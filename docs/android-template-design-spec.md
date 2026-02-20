@@ -170,6 +170,13 @@ root
   - success -> Home
   - failure -> Auth screen with error feedback
 
+### 6.6 Transition Motion Contract (Android 2026)
+- Default screen transition MUST use:
+  - `fadeThrough` OR
+  - `sharedAxisX` (forward/back direction aware)
+- Back navigation animation MUST stay consistent with predictive back pop behavior.
+- Transition direction and timing MUST remain consistent for push/pop across the same flow.
+
 ## 7. Material 3 Component Mapping (iOS -> Android)
 
 | iOS Pattern | Android 2026 M3 Mapping | Required Rule |
@@ -270,6 +277,18 @@ root
   2. Snackbar second
   3. Toast only for passive notices
 
+### 10.1 Motion and Feedback Baseline (Template)
+- Bottom sheet motion MUST follow Android-native behavior:
+  - `ModalBottomSheet` supports `partial <-> expanded`
+  - drag handle visible
+  - scrim behavior present
+  - spring-like settle motion for drag/release
+- Buttons and clickable controls MUST provide:
+  - ripple feedback
+  - pressed state layer
+- TextField focus changes MUST include focus border transition between unfocused and focused states.
+- Toast MUST NOT be primary for errors; Snackbar remains preferred for transient feedback.
+
 ## 11. Testing Policy (TDD Mandatory)
 
 ### 11.1 Per-PR Minimum Tests
@@ -291,6 +310,7 @@ root
 - [x] IA placement unchanged (My Page/Subscription/Purchase History/Danger Zone)
 - [x] Edge-to-edge and insets rules applied on all affected screens
 - [x] Predictive back order implemented (sheet > dialog > pop > exit)
+- [ ] Motion baseline passed (fadeThrough/sharedAxisX, predictive back pop, sheet spring behavior)
 - [x] Dialog/sheet behavior matches contract
 - [x] A11y baseline passed (48dp, TalkBack, font scaling)
 - [x] Per-PR test minimum met (unit + integration + UI)
