@@ -1,3 +1,7 @@
+fun toBuildConfigString(value: String): String {
+  return "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
+}
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.android)
@@ -7,6 +11,7 @@ plugins {
 android {
   namespace = "com.example.androidtemplate"
   compileSdk = 35
+  val authBaseUrl = providers.gradleProperty("AUTH_BASE_URL").orElse("").get()
 
   defaultConfig {
     applicationId = "com.example.androidtemplate"
@@ -14,6 +19,8 @@ android {
     targetSdk = 35
     versionCode = 1
     versionName = "1.0"
+
+    buildConfigField("String", "AUTH_BASE_URL", toBuildConfigString(authBaseUrl))
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -38,6 +45,7 @@ android {
   }
 
   buildFeatures {
+    buildConfig = true
     compose = true
   }
 
@@ -51,6 +59,7 @@ android {
 dependencies {
   implementation(project(":core:contracts"))
   implementation(project(":core:navigation"))
+  implementation(project(":core:storage"))
   implementation(project(":core:ui"))
   implementation(project(":features:auth"))
   implementation(project(":features:billing"))
@@ -65,6 +74,7 @@ dependencies {
   implementation(libs.androidx.compose.ui.tooling.preview)
   implementation(libs.androidx.compose.material3)
   implementation(libs.androidx.navigation.compose)
+  implementation(libs.androidx.security.crypto)
 
   testImplementation(libs.junit4)
   androidTestImplementation(libs.androidx.junit)

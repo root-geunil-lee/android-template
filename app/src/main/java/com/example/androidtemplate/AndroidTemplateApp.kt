@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
@@ -31,10 +32,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.androidtemplate.auth.provideAuthRepository
 import com.example.androidtemplate.core.navigation.AppRoutes
 import com.example.androidtemplate.features.auth.AuthMethodsScreen
-import com.example.androidtemplate.features.auth.DemoAuthRepository
 import com.example.androidtemplate.features.auth.EmailSignInScreen
+import com.example.androidtemplate.features.auth.AuthRepositoryContract
+import com.example.androidtemplate.features.auth.AuthResult
 import com.example.androidtemplate.features.auth.OtpAuthUseCase
 import com.example.androidtemplate.features.auth.OtpFlowState
 import com.example.androidtemplate.features.auth.OtpVerifyScreen
@@ -51,19 +54,30 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun AndroidTemplateApp() {
+  val context = LocalContext.current
+  val authRepository = remember(context) { provideAuthRepository(context) }
   var isAuthenticated by rememberSaveable { mutableStateOf(false) }
   if (isAuthenticated) {
-    AuthenticatedApp(onLogout = { isAuthenticated = false })
+    AuthenticatedApp(
+      authRepository = authRepository,
+      onLogout = { isAuthenticated = false },
+    )
   } else {
-    UnauthenticatedApp(onAuthenticated = { isAuthenticated = true })
+    UnauthenticatedApp(
+      authRepository = authRepository,
+      onAuthenticated = { isAuthenticated = true },
+    )
   }
 }
 
 @Composable
-private fun UnauthenticatedApp(onAuthenticated: () -> Unit) {
+private fun UnauthenticatedApp(
+  authRepository: AuthRepositoryContract,
+  onAuthenticated: () -> Unit,
+) {
   val navController = rememberNavController()
   val coroutineScope = rememberCoroutineScope()
-  val otpAuthUseCase = remember { OtpAuthUseCase(DemoAuthRepository()) }
+  val otpAuthUseCase = remember(authRepository) { OtpAuthUseCase(authRepository) }
   var otpFlowState by remember { mutableStateOf<OtpFlowState>(OtpFlowState.Idle) }
 
   NavHost(
@@ -120,8 +134,12 @@ private fun UnauthenticatedApp(onAuthenticated: () -> Unit) {
 }
 
 @Composable
-private fun AuthenticatedApp(onLogout: () -> Unit) {
+private fun AuthenticatedApp(
+  authRepository: AuthRepositoryContract,
+  onLogout: () -> Unit,
+) {
   val navController = rememberNavController()
+  val coroutineScope = rememberCoroutineScope()
   val snackbarHostState = remember { SnackbarHostState() }
   var paywallResultMessage by rememberSaveable { mutableStateOf<String?>(null) }
 
@@ -199,7 +217,15 @@ private fun AuthenticatedApp(onLogout: () -> Unit) {
           onEditProfile = { navController.navigate(AppRoutes.MYPAGE_EDIT_PROFILE) },
           onSubscription = { navController.navigate(AppRoutes.MYPAGE_SUBSCRIPTION) },
           onPurchaseHistory = { navController.navigate(AppRoutes.MYPAGE_PURCHASE_HISTORY) },
-          onLogoutCompleted = onLogout,
+          onLogoutCompleted = {
+            coroutineScope.launch {
+              when (val result = authRepository.logout()) {
+                AuthResult.Success -> onLogout()
+                is AuthResult.RateLimited -> snackbarHostState.showSnackbar("Too many requests. Retry in ${result.retryAfterSeconds}s")
+                is AuthResult.Failure -> snackbarHostState.showSnackbar(result.message)
+              }
+            }
+          },
           onDeleteCompleted = onLogout,
         )
       }
