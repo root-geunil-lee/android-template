@@ -1,5 +1,6 @@
 package com.example.androidtemplate.features.mypage
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,20 @@ fun MyPageRoute(
   var showLogoutDialog by rememberSaveable { mutableStateOf(false) }
   var showDeleteDialogStep1 by rememberSaveable { mutableStateOf(false) }
   var showDeleteDialogStep2 by rememberSaveable { mutableStateOf(false) }
+  val topDialog = highestPriorityDialog(
+    isLogoutDialogVisible = showLogoutDialog,
+    isDeleteStep1DialogVisible = showDeleteDialogStep1,
+    isDeleteStep2DialogVisible = showDeleteDialogStep2,
+  )
+
+  BackHandler(enabled = topDialog != null) {
+    when (topDialog) {
+      MyPageDialogId.DeleteStep2 -> showDeleteDialogStep2 = false
+      MyPageDialogId.DeleteStep1 -> showDeleteDialogStep1 = false
+      MyPageDialogId.Logout -> showLogoutDialog = false
+      null -> Unit
+    }
+  }
 
   MyPageScreen(
     onEditProfile = onEditProfile,
