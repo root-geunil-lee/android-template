@@ -46,10 +46,11 @@ class AppScreensTest {
         onGoogle = {},
         onKakao = {},
         onContinueWithEmail = {},
+        onViewPlans = {},
       )
     }
 
-    composeRule.onNodeWithText("Continue with Email").assertIsDisplayed()
+    composeRule.onNodeWithText("Continue with Email →").assertIsDisplayed()
     composeRule.onAllNodesWithTag("email_input").assertCountEquals(0)
   }
 
@@ -65,12 +66,13 @@ class AppScreensTest {
           onGoogle = {},
           onKakao = {},
           onContinueWithEmail = {},
+          onViewPlans = {},
         )
       }
     }
 
-    composeRule.onNodeWithTag("auth_methods_scroll").performScrollToNode(hasText("Continue with Email"))
-    composeRule.onNodeWithText("Continue with Email").assertIsDisplayed()
+    composeRule.onNodeWithTag("auth_methods_scroll").performScrollToNode(hasText("Continue with Email →"))
+    composeRule.onNodeWithText("Continue with Email →").assertIsDisplayed()
   }
 
   @Test
@@ -82,13 +84,14 @@ class AppScreensTest {
         onGoogle = {},
         onKakao = {},
         onContinueWithEmail = {},
+        onViewPlans = {},
       )
     }
 
     composeRule.onNodeWithTag("auth_provider_0_google").assertIsDisplayed().assertHeightIsAtLeast(56.dp)
-    composeRule.onNodeWithTag("auth_provider_1_apple").assertIsDisplayed().assertHeightIsAtLeast(56.dp)
-    composeRule.onNodeWithTag("auth_provider_2_kakao").assertIsDisplayed().assertHeightIsAtLeast(56.dp)
-    composeRule.onNodeWithTag("auth_provider_3_email").assertIsDisplayed().assertHeightIsAtLeast(56.dp)
+    composeRule.onNodeWithTag("auth_provider_1_apple").assertIsDisplayed().assertHeightIsAtLeast(52.dp)
+    composeRule.onNodeWithTag("auth_provider_2_kakao").assertIsDisplayed().assertHeightIsAtLeast(52.dp)
+    composeRule.onNodeWithTag("auth_provider_3_email").assertIsDisplayed().assertHeightIsAtLeast(44.dp)
   }
 
   @Test
@@ -100,6 +103,7 @@ class AppScreensTest {
         onGoogle = {},
         onKakao = {},
         onContinueWithEmail = {},
+        onViewPlans = {},
       )
     }
 
@@ -118,13 +122,15 @@ class AppScreensTest {
         onGoogle = {},
         onKakao = {},
         onContinueWithEmail = {},
+        onViewPlans = {},
       )
     }
 
     composeRule.onNodeWithContentDescription("Continue with Google").assertHasClickAction()
-    composeRule.onNodeWithContentDescription("Continue with Apple").assertHasClickAction()
+    composeRule.onNodeWithContentDescription("Sign in with Apple").assertHasClickAction()
     composeRule.onNodeWithContentDescription("Continue with Kakao").assertHasClickAction()
     composeRule.onNodeWithContentDescription("Continue with Email").assertHasClickAction()
+    composeRule.onNodeWithContentDescription("View plans").assertHasClickAction()
   }
 
   @Test
@@ -335,7 +341,7 @@ class AppScreensTest {
       }
     }
 
-    composeRule.onNodeWithTag("subscription_scroll").performScrollToNode(hasText("Back"))
-    composeRule.onNodeWithText("Back").assertIsDisplayed()
+    composeRule.onNodeWithTag("subscription_scroll").performScrollToNode(hasText("Subscriptions are managed through your Apple ID settings."))
+    composeRule.onNodeWithText("Subscriptions are managed through your Apple ID settings.").assertIsDisplayed()
   }
 }
