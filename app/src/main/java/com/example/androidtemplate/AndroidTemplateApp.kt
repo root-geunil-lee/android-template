@@ -1,5 +1,6 @@
 package com.example.androidtemplate
 
+import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -21,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
@@ -32,12 +34,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.androidtemplate.auth.AuthCallbackBus
 import com.example.androidtemplate.auth.provideAuthRepository
 import com.example.androidtemplate.core.navigation.AppRoutes
 import com.example.androidtemplate.features.auth.AuthMethodsScreen
 import com.example.androidtemplate.features.auth.EmailSignInScreen
 import com.example.androidtemplate.features.auth.AuthRepositoryContract
 import com.example.androidtemplate.features.auth.AuthResult
+import com.example.androidtemplate.features.auth.OAuthFlowState
+import com.example.androidtemplate.features.auth.OAuthProvider
+import com.example.androidtemplate.features.auth.OAuthUseCase
 import com.example.androidtemplate.features.auth.OtpAuthUseCase
 import com.example.androidtemplate.features.auth.OtpFlowState
 import com.example.androidtemplate.features.auth.OtpVerifyScreen
@@ -75,10 +81,38 @@ private fun UnauthenticatedApp(
   authRepository: AuthRepositoryContract,
   onAuthenticated: () -> Unit,
 ) {
+  val context = LocalContext.current
   val navController = rememberNavController()
   val coroutineScope = rememberCoroutineScope()
+  val oauthUseCase = remember(authRepository) { OAuthUseCase(authRepository) }
   val otpAuthUseCase = remember(authRepository) { OtpAuthUseCase(authRepository) }
+  var oauthFlowState by remember { mutableStateOf<OAuthFlowState>(OAuthFlowState.Idle) }
   var otpFlowState by remember { mutableStateOf<OtpFlowState>(OtpFlowState.Idle) }
+
+  LaunchedEffect(authRepository) {
+    AuthCallbackBus.callbacks.collect { callbackUri ->
+      oauthFlowState = oauthUseCase.handleCallback(callbackUri)
+      if (oauthFlowState == OAuthFlowState.Authenticated) {
+        onAuthenticated()
+      }
+    }
+  }
+
+  fun startOAuth(provider: OAuthProvider) {
+    oauthFlowState = oauthUseCase.start(provider)
+    val launchState = oauthFlowState as? OAuthFlowState.LaunchBrowser ?: return
+
+    runCatching {
+      context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(launchState.url)))
+    }.onFailure {
+      oauthFlowState = OAuthFlowState.Error("Failed to launch OAuth browser")
+    }
+
+    // Demo fallback repository can emit an app link directly.
+    if (launchState.url.startsWith("androidtemplate://")) {
+      AuthCallbackBus.emit(launchState.url)
+    }
+  }
 
   NavHost(
     navController = navController,
@@ -86,10 +120,12 @@ private fun UnauthenticatedApp(
   ) {
     composable(AppRoutes.AUTH_METHODS) {
       AuthMethodsScreen(
-        onApple = onAuthenticated,
-        onGoogle = onAuthenticated,
-        onKakao = onAuthenticated,
+        oauthState = oauthFlowState,
+        onApple = { startOAuth(OAuthProvider.Apple) },
+        onGoogle = { startOAuth(OAuthProvider.Google) },
+        onKakao = { startOAuth(OAuthProvider.Kakao) },
         onContinueWithEmail = {
+          oauthFlowState = OAuthFlowState.Idle
           otpFlowState = OtpFlowState.Idle
           navController.navigate(AppRoutes.AUTH_EMAIL)
         },

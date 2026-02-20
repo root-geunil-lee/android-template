@@ -11,7 +11,12 @@ plugins {
 android {
   namespace = "com.example.androidtemplate"
   compileSdk = 35
-  val authBaseUrl = providers.gradleProperty("AUTH_BASE_URL").orElse("").get()
+  val supabaseUrl = providers.gradleProperty("SUPABASE_URL").orElse("").get()
+  val legacyAuthUrl = providers.gradleProperty("AUTH_BASE_URL").orElse("").get()
+  val authBaseUrl = if (supabaseUrl.isNotBlank()) supabaseUrl else legacyAuthUrl
+  val supabaseRedirectUrl = providers.gradleProperty("SUPABASE_REDIRECT_URL")
+    .orElse("androidtemplate://auth/callback")
+    .get()
 
   defaultConfig {
     applicationId = "com.example.androidtemplate"
@@ -21,6 +26,7 @@ android {
     versionName = "1.0"
 
     buildConfigField("String", "AUTH_BASE_URL", toBuildConfigString(authBaseUrl))
+    buildConfigField("String", "SUPABASE_REDIRECT_URL", toBuildConfigString(supabaseRedirectUrl))
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }

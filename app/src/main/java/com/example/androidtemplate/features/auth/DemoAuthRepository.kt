@@ -3,6 +3,18 @@ package com.example.androidtemplate.features.auth
 import kotlinx.coroutines.delay
 
 class DemoAuthRepository : AuthRepositoryContract {
+  override fun buildOAuthAuthorizeUrl(provider: OAuthProvider): String? {
+    return "androidtemplate://auth/callback#access_token=demo-token-${provider.providerKey}"
+  }
+
+  override suspend fun completeOAuthCallback(callbackUri: String): AuthResult {
+    return if (callbackUri.contains("error=")) {
+      AuthResult.Failure("OAuth failed")
+    } else {
+      AuthResult.Success
+    }
+  }
+
   override suspend fun requestOtp(email: String): AuthResult {
     delay(200)
     return if (email.contains("rate", ignoreCase = true)) {

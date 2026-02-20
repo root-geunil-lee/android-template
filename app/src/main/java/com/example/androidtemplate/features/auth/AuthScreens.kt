@@ -24,24 +24,39 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun AuthMethodsScreen(
+  oauthState: OAuthFlowState,
   onApple: () -> Unit,
   onGoogle: () -> Unit,
   onKakao: () -> Unit,
   onContinueWithEmail: () -> Unit,
 ) {
+  val oauthMessage = when (oauthState) {
+    is OAuthFlowState.Error -> oauthState.message
+    OAuthFlowState.HandlingCallback -> "Signing in..."
+    else -> null
+  }
+  val isBusy = oauthState == OAuthFlowState.HandlingCallback
+
   Column(
     modifier = Modifier.fillMaxSize(),
     verticalArrangement = Arrangement.Center,
   ) {
     Text("Sign in", style = MaterialTheme.typography.headlineMedium)
+    if (!oauthMessage.isNullOrBlank()) {
+      Spacer(Modifier.height(8.dp))
+      Text(
+        text = oauthMessage,
+        color = MaterialTheme.colorScheme.error,
+      )
+    }
     Spacer(Modifier.height(24.dp))
-    Button(onClick = onApple, modifier = Modifier.fillMaxWidth()) { Text("Continue with Apple") }
+    Button(onClick = onApple, enabled = !isBusy, modifier = Modifier.fillMaxWidth()) { Text("Continue with Apple") }
     Spacer(Modifier.height(12.dp))
-    Button(onClick = onGoogle, modifier = Modifier.fillMaxWidth()) { Text("Continue with Google") }
+    Button(onClick = onGoogle, enabled = !isBusy, modifier = Modifier.fillMaxWidth()) { Text("Continue with Google") }
     Spacer(Modifier.height(12.dp))
-    Button(onClick = onKakao, modifier = Modifier.fillMaxWidth()) { Text("Continue with Kakao") }
+    Button(onClick = onKakao, enabled = !isBusy, modifier = Modifier.fillMaxWidth()) { Text("Continue with Kakao") }
     Spacer(Modifier.height(12.dp))
-    Button(onClick = onContinueWithEmail, modifier = Modifier.fillMaxWidth()) { Text("Continue with Email") }
+    Button(onClick = onContinueWithEmail, enabled = !isBusy, modifier = Modifier.fillMaxWidth()) { Text("Continue with Email") }
   }
 }
 

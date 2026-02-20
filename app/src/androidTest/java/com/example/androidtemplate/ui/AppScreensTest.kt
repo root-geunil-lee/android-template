@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithText
 import com.example.androidtemplate.features.auth.AuthMethodsScreen
+import com.example.androidtemplate.features.auth.OAuthFlowState
 import com.example.androidtemplate.features.mypage.MyPageScreen
 import org.junit.Rule
 import org.junit.Test
@@ -19,6 +20,7 @@ class AppScreensTest {
   fun authMethodsScreen_hasNoInputField() {
     composeRule.setContent {
       AuthMethodsScreen(
+        oauthState = OAuthFlowState.Idle,
         onApple = {},
         onGoogle = {},
         onKakao = {},

@@ -9,6 +9,7 @@ import com.example.androidtemplate.features.auth.DemoAuthRepository
 
 fun provideAuthRepository(context: Context): AuthRepositoryContract {
   val baseUrl = BuildConfig.AUTH_BASE_URL
+  val redirectUrl = BuildConfig.SUPABASE_REDIRECT_URL
 
   return ConfigurableAuthRepository(
     authBaseUrl = baseUrl,
@@ -16,6 +17,7 @@ fun provideAuthRepository(context: Context): AuthRepositoryContract {
     remoteRepositoryFactory = {
       AuthRepository(
         baseUrl = baseUrl,
+        redirectUrl = redirectUrl,
         sessionStore = EncryptedSessionStore(context),
       )
     },
