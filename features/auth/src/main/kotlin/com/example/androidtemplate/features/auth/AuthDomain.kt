@@ -18,6 +18,7 @@ interface AuthRepositoryContract {
   suspend fun requestOtp(email: String): AuthResult
   suspend fun verifyOtp(email: String, code: String): AuthResult
   suspend fun logout(): AuthResult
+  suspend fun clearLocalSession(): AuthResult = AuthResult.Success
 }
 
 sealed interface OAuthFlowState {

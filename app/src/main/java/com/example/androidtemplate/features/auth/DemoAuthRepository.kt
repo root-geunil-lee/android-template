@@ -34,4 +34,6 @@ class DemoAuthRepository : AuthRepositoryContract {
   }
 
   override suspend fun logout(): AuthResult = AuthResult.Success
+
+  override suspend fun clearLocalSession(): AuthResult = AuthResult.Success
 }

@@ -21,4 +21,6 @@ class ConfigurableAuthRepository(
   override suspend fun completeOAuthCallback(callbackUri: String): AuthResult = delegate.completeOAuthCallback(callbackUri)
 
   override suspend fun logout(): AuthResult = delegate.logout()
+
+  override suspend fun clearLocalSession(): AuthResult = delegate.clearLocalSession()
 }

@@ -117,6 +117,15 @@ class AuthRepository(
     }
   }
 
+  override suspend fun clearLocalSession(): AuthResult {
+    return runCatching {
+      sessionStore.clearSession()
+      AuthResult.Success
+    }.getOrElse {
+      AuthResult.Failure("Failed to clear session")
+    }
+  }
+
   private suspend fun postWithoutAuth(path: String, payload: String): AuthResult {
     val response = executePostWithoutAuth(path, payload)
 

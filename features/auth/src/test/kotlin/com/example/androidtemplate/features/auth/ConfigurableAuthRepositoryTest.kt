@@ -42,11 +42,29 @@ class ConfigurableAuthRepositoryTest {
     assertThat(fallback.verifyOtpCallCount).isEqualTo(0)
   }
 
+  @Test
+  fun clearLocalSession_delegatesToSelectedRepository() = runBlocking {
+    val fallback = FakeRepository(AuthResult.Success)
+    val remote = FakeRepository(AuthResult.Success)
+    val repository = ConfigurableAuthRepository(
+      authBaseUrl = "",
+      fallbackRepository = fallback,
+      remoteRepositoryFactory = { remote },
+    )
+
+    val result = repository.clearLocalSession()
+
+    assertThat(result).isEqualTo(AuthResult.Success)
+    assertThat(fallback.clearLocalSessionCallCount).isEqualTo(1)
+    assertThat(remote.clearLocalSessionCallCount).isEqualTo(0)
+  }
+
   private class FakeRepository(
     private val result: AuthResult,
   ) : AuthRepositoryContract {
     var requestOtpCallCount: Int = 0
     var verifyOtpCallCount: Int = 0
+    var clearLocalSessionCallCount: Int = 0
 
     override suspend fun requestOtp(email: String): AuthResult {
       requestOtpCallCount += 1
@@ -59,5 +77,10 @@ class ConfigurableAuthRepositoryTest {
     }
 
     override suspend fun logout(): AuthResult = result
+
+    override suspend fun clearLocalSession(): AuthResult {
+      clearLocalSessionCallCount += 1
+      return result
+    }
   }
 }

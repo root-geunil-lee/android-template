@@ -136,6 +136,21 @@ class AuthRepositoryIntegrationTest {
     assertThat(sessionStore.savedAccessToken).isEqualTo("oauth-token")
   }
 
+  @Test
+  fun clearLocalSession_clearsSessionWithoutNetworkCall() = runBlocking {
+    val sessionStore = InMemorySessionStore(token = "access-token")
+    val repository = AuthRepository(
+      baseUrl = "https://example.supabase.co",
+      redirectUrl = "androidtemplate://auth/callback",
+      sessionStore = sessionStore,
+    )
+
+    val result = repository.clearLocalSession()
+
+    assertThat(result).isEqualTo(AuthResult.Success)
+    assertThat(sessionStore.cleared).isTrue()
+  }
+
   private class InMemorySessionStore(private var token: String? = null) : SessionStore {
     var cleared: Boolean = false
     var savedAccessToken: String? = null

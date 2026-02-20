@@ -1,6 +1,5 @@
 package com.example.androidtemplate
 
-import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -28,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -35,7 +35,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.androidtemplate.auth.AuthCallbackBus
-import com.example.androidtemplate.auth.provideAuthRepository
 import com.example.androidtemplate.core.navigation.AppRoutes
 import com.example.androidtemplate.features.auth.AuthMethodsScreen
 import com.example.androidtemplate.features.auth.EmailSignInScreen
@@ -59,9 +58,9 @@ import com.example.androidtemplate.features.mypage.EditProfileScreen
 import kotlinx.coroutines.launch
 
 @Composable
-fun AndroidTemplateApp() {
-  val context = LocalContext.current
-  val authRepository = remember(context) { provideAuthRepository(context) }
+fun AndroidTemplateApp(
+  authRepository: AuthRepositoryContract,
+) {
   var isAuthenticated by rememberSaveable { mutableStateOf(false) }
   if (isAuthenticated) {
     AuthenticatedApp(
@@ -82,6 +81,11 @@ private fun UnauthenticatedApp(
   onAuthenticated: () -> Unit,
 ) {
   val context = LocalContext.current
+  val customTabsIntent = remember {
+    CustomTabsIntent.Builder()
+      .setShowTitle(true)
+      .build()
+  }
   val navController = rememberNavController()
   val coroutineScope = rememberCoroutineScope()
   val oauthUseCase = remember(authRepository) { OAuthUseCase(authRepository) }
@@ -102,15 +106,16 @@ private fun UnauthenticatedApp(
     oauthFlowState = oauthUseCase.start(provider)
     val launchState = oauthFlowState as? OAuthFlowState.LaunchBrowser ?: return
 
-    runCatching {
-      context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(launchState.url)))
-    }.onFailure {
-      oauthFlowState = OAuthFlowState.Error("Failed to launch OAuth browser")
-    }
-
     // Demo fallback repository can emit an app link directly.
     if (launchState.url.startsWith("androidtemplate://")) {
       AuthCallbackBus.emit(launchState.url)
+      return
+    }
+
+    runCatching {
+      customTabsIntent.launchUrl(context, Uri.parse(launchState.url))
+    }.onFailure {
+      oauthFlowState = OAuthFlowState.Error("Failed to launch OAuth browser")
     }
   }
 
@@ -267,7 +272,15 @@ private fun AuthenticatedApp(
               }
             }
           },
-          onDeleteCompleted = onLogout,
+          onDeleteCompleted = {
+            coroutineScope.launch {
+              when (val result = authRepository.clearLocalSession()) {
+                AuthResult.Success -> onLogout()
+                is AuthResult.RateLimited -> snackbarHostState.showSnackbar("Too many requests. Retry in ${result.retryAfterSeconds}s")
+                is AuthResult.Failure -> snackbarHostState.showSnackbar(result.message)
+              }
+            }
+          },
         )
       }
 
