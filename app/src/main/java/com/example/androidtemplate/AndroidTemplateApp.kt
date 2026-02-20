@@ -45,6 +45,7 @@ import com.example.androidtemplate.features.mypage.MyPageRoute
 import com.example.androidtemplate.features.mypage.PurchaseHistoryScreen
 import com.example.androidtemplate.features.mypage.SubscriptionScreen
 import com.example.androidtemplate.features.mypage.TransactionDetailScreen
+import com.example.androidtemplate.features.mypage.EditProfileScreen
 import kotlinx.coroutines.launch
 
 @Composable
@@ -182,10 +183,17 @@ private fun AuthenticatedApp(onLogout: () -> Unit) {
 
       composable(AppRoutes.MYPAGE) {
         MyPageRoute(
+          onEditProfile = { navController.navigate(AppRoutes.MYPAGE_EDIT_PROFILE) },
           onSubscription = { navController.navigate(AppRoutes.MYPAGE_SUBSCRIPTION) },
           onPurchaseHistory = { navController.navigate(AppRoutes.MYPAGE_PURCHASE_HISTORY) },
           onLogoutCompleted = onLogout,
           onDeleteCompleted = onLogout,
+        )
+      }
+
+      composable(AppRoutes.MYPAGE_EDIT_PROFILE) {
+        EditProfileScreen(
+          onBack = { navController.popBackStack() },
         )
       }
 
@@ -217,7 +225,7 @@ private fun AuthenticatedApp(onLogout: () -> Unit) {
     }
   }
 
-  if (currentRoute !in listOf(AppRoutes.HOME, AppRoutes.MYPAGE, AppRoutes.MYPAGE_SUBSCRIPTION, AppRoutes.MYPAGE_PURCHASE_HISTORY, AppRoutes.MYPAGE_TRANSACTION_DETAIL, AppRoutes.PAYWALL)) {
+  if (currentRoute !in listOf(AppRoutes.HOME, AppRoutes.MYPAGE, AppRoutes.MYPAGE_EDIT_PROFILE, AppRoutes.MYPAGE_SUBSCRIPTION, AppRoutes.MYPAGE_PURCHASE_HISTORY, AppRoutes.MYPAGE_TRANSACTION_DETAIL, AppRoutes.PAYWALL)) {
     Button(onClick = { navController.navigate(AppRoutes.HOME) }) {
       Text("Go Home")
     }

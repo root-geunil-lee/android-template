@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -26,6 +27,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun MyPageRoute(
+  onEditProfile: () -> Unit,
   onSubscription: () -> Unit,
   onPurchaseHistory: () -> Unit,
   onLogoutCompleted: () -> Unit,
@@ -36,7 +38,7 @@ fun MyPageRoute(
   var showDeleteDialogStep2 by rememberSaveable { mutableStateOf(false) }
 
   MyPageScreen(
-    onEditProfile = {},
+    onEditProfile = onEditProfile,
     onSubscription = onSubscription,
     onPurchaseHistory = onPurchaseHistory,
     onTerms = {},
@@ -196,6 +198,58 @@ fun PurchaseHistoryScreen(
 
     Spacer(Modifier.height(8.dp))
     Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Back") }
+  }
+}
+
+@Composable
+fun EditProfileScreen(
+  onBack: () -> Unit,
+) {
+  var state by rememberSaveable {
+    mutableStateOf(EditProfileState.initial(email = "user@example.com"))
+  }
+
+  Column(
+    modifier = Modifier.fillMaxSize(),
+    verticalArrangement = Arrangement.Center,
+  ) {
+    Text("Edit Profile", style = MaterialTheme.typography.headlineSmall)
+    Spacer(Modifier.height(12.dp))
+    OutlinedTextField(
+      value = state.displayName,
+      onValueChange = { value ->
+        state = EditProfileReducer(state).onDisplayNameChanged(value)
+      },
+      label = { Text("Display name") },
+      isError = state.validationError != null,
+      supportingText = {
+        if (!state.validationError.isNullOrBlank()) {
+          Text(state.validationError ?: "")
+        }
+      },
+      modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(Modifier.height(8.dp))
+    OutlinedTextField(
+      value = state.email,
+      onValueChange = {},
+      readOnly = true,
+      enabled = false,
+      label = { Text("Email") },
+      modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(Modifier.height(16.dp))
+    Button(
+      onClick = {},
+      enabled = state.isSaveEnabled,
+      modifier = Modifier.fillMaxWidth(),
+    ) {
+      Text("Save")
+    }
+    Spacer(Modifier.height(8.dp))
+    Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
+      Text("Back")
+    }
   }
 }
 
