@@ -1,5 +1,6 @@
 package com.example.androidtemplate
 
+import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -57,6 +58,8 @@ import com.example.androidtemplate.features.mypage.PurchaseHistoryScreen
 import com.example.androidtemplate.features.mypage.SubscriptionScreen
 import com.example.androidtemplate.features.mypage.TransactionDetailScreen
 import com.example.androidtemplate.features.mypage.EditProfileScreen
+import com.example.androidtemplate.features.mypage.PaymentMethodScreen
+import com.example.androidtemplate.features.mypage.PlanSelectionScreen
 import com.example.androidtemplate.core.ui.DesignTokens
 import com.example.androidtemplate.core.ui.effectiveHorizontalPaddingPx
 import kotlinx.coroutines.launch
@@ -201,6 +204,7 @@ private fun AuthenticatedApp(
   authRepository: AuthRepositoryContract,
   onLogout: () -> Unit,
 ) {
+  val context = LocalContext.current
   val navController = rememberNavController()
   val coroutineScope = rememberCoroutineScope()
   val snackbarHostState = remember { SnackbarHostState() }
@@ -311,6 +315,34 @@ private fun AuthenticatedApp(
       composable(AppRoutes.MYPAGE_SUBSCRIPTION) {
         SubscriptionScreen(
           onBack = { navController.popBackStack() },
+          onOpenPlanSelection = { navController.navigate(AppRoutes.MYPAGE_PLAN_SELECTION) },
+          onOpenPaymentMethod = { navController.navigate(AppRoutes.MYPAGE_PAYMENT_METHOD) },
+          onOpenStoreSubscription = {
+            runCatching {
+              context.startActivity(
+                Intent(
+                  Intent.ACTION_VIEW,
+                  Uri.parse("https://play.google.com/store/account/subscriptions"),
+                ),
+              )
+            }.onFailure {
+              coroutineScope.launch {
+                snackbarHostState.showSnackbar("Failed to open Play Store subscriptions")
+              }
+            }
+          },
+        )
+      }
+
+      composable(AppRoutes.MYPAGE_PLAN_SELECTION) {
+        PlanSelectionScreen(
+          onBack = { navController.popBackStack() },
+        )
+      }
+
+      composable(AppRoutes.MYPAGE_PAYMENT_METHOD) {
+        PaymentMethodScreen(
+          onBack = { navController.popBackStack() },
         )
       }
 
@@ -336,7 +368,7 @@ private fun AuthenticatedApp(
     }
   }
 
-  if (currentRoute !in listOf(AppRoutes.HOME, AppRoutes.MYPAGE, AppRoutes.MYPAGE_EDIT_PROFILE, AppRoutes.MYPAGE_SUBSCRIPTION, AppRoutes.MYPAGE_PURCHASE_HISTORY, AppRoutes.MYPAGE_TRANSACTION_DETAIL, AppRoutes.PAYWALL)) {
+  if (currentRoute !in listOf(AppRoutes.HOME, AppRoutes.MYPAGE, AppRoutes.MYPAGE_EDIT_PROFILE, AppRoutes.MYPAGE_SUBSCRIPTION, AppRoutes.MYPAGE_PLAN_SELECTION, AppRoutes.MYPAGE_PAYMENT_METHOD, AppRoutes.MYPAGE_PURCHASE_HISTORY, AppRoutes.MYPAGE_TRANSACTION_DETAIL, AppRoutes.PAYWALL)) {
     Button(onClick = { navController.navigate(AppRoutes.HOME) }) {
       Text("Go Home")
     }

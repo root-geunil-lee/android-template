@@ -20,11 +20,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.androidtemplate.core.contracts.AndroidBillingContract
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun MyPageRoute(
@@ -152,13 +157,107 @@ fun MyPageScreen(
 }
 
 @Composable
-fun SubscriptionScreen(onBack: () -> Unit) {
+fun SubscriptionScreen(
+  onBack: () -> Unit,
+  onOpenPlanSelection: () -> Unit,
+  onOpenPaymentMethod: () -> Unit,
+  onOpenStoreSubscription: () -> Unit,
+) {
+  val coroutineScope = rememberCoroutineScope()
+  var state by remember { mutableStateOf(SubscriptionState.premium()) }
+  var showCancelDialog by rememberSaveable { mutableStateOf(false) }
+
   Column(
     modifier = Modifier.fillMaxSize(),
-    verticalArrangement = Arrangement.Center,
+    verticalArrangement = Arrangement.spacedBy(8.dp),
   ) {
     Text("Subscription", style = MaterialTheme.typography.headlineSmall)
-    Text("Current plan: monthly")
+    Text("Current plan: ${state.planName}")
+    Text(
+      text = state.renewalDate?.let { "Renews on $it" } ?: "Upgrade to unlock premium features",
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Spacer(Modifier.height(8.dp))
+    Button(onClick = onOpenPlanSelection, modifier = Modifier.fillMaxWidth()) { Text("Change Plan") }
+    Button(onClick = onOpenPaymentMethod, modifier = Modifier.fillMaxWidth()) { Text("Payment Method") }
+    Button(onClick = onOpenStoreSubscription, modifier = Modifier.fillMaxWidth()) { Text("Manage in App Store") }
+    if (state.isSubscribed) {
+      Button(
+        onClick = { showCancelDialog = true },
+        enabled = !state.isCancelling,
+        modifier = Modifier.fillMaxWidth(),
+      ) {
+        Text(if (state.isCancelling) "Cancelling..." else "Cancel Subscription")
+      }
+    }
+    Text(
+      text = "Subscriptions are managed through your Play Store settings.",
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+      style = MaterialTheme.typography.bodyMedium,
+    )
+    Spacer(Modifier.height(16.dp))
+    Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Back") }
+  }
+
+  if (showCancelDialog) {
+    AlertDialog(
+      onDismissRequest = { showCancelDialog = false },
+      confirmButton = {
+        Button(onClick = {
+          showCancelDialog = false
+          coroutineScope.launch {
+            state = SubscriptionReducer(state).onCancelRequested()
+            delay(800)
+            state = SubscriptionReducer(state).onCancelCompleted()
+          }
+        }) {
+          Text("Cancel Subscription")
+        }
+      },
+      dismissButton = {
+        Button(onClick = { showCancelDialog = false }) { Text("Keep Subscription") }
+      },
+      title = { Text("Cancel subscription?") },
+      text = { Text("You will keep access until the current billing period ends.") },
+    )
+  }
+}
+
+@Composable
+fun PlanSelectionScreen(
+  onBack: () -> Unit,
+) {
+  var selectedPlanId by rememberSaveable { mutableStateOf(AndroidBillingContract.PRODUCT_IDS.first()) }
+  Column(
+    modifier = Modifier.fillMaxSize(),
+    verticalArrangement = Arrangement.spacedBy(8.dp),
+  ) {
+    Text("Change Plan", style = MaterialTheme.typography.headlineSmall)
+    AndroidBillingContract.PRODUCT_IDS.forEach { planId ->
+      Button(
+        onClick = { selectedPlanId = planId },
+        modifier = Modifier.fillMaxWidth(),
+      ) {
+        val label = if (selectedPlanId == planId) "[$planId]" else planId
+        Text(label)
+      }
+    }
+    Spacer(Modifier.height(16.dp))
+    Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Back") }
+  }
+}
+
+@Composable
+fun PaymentMethodScreen(
+  onBack: () -> Unit,
+) {
+  Column(
+    modifier = Modifier.fillMaxSize(),
+    verticalArrangement = Arrangement.spacedBy(8.dp),
+  ) {
+    Text("Payment Method", style = MaterialTheme.typography.headlineSmall)
+    Text("Current method: Visa •••• 4242")
+    Button(onClick = {}, modifier = Modifier.fillMaxWidth()) { Text("Add Payment Method") }
     Spacer(Modifier.height(16.dp))
     Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Back") }
   }

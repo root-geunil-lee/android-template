@@ -8,6 +8,8 @@ object AppRoutes {
   const val MYPAGE = "mypage"
   const val MYPAGE_EDIT_PROFILE = "mypage/edit-profile"
   const val MYPAGE_SUBSCRIPTION = "mypage/subscription"
+  const val MYPAGE_PLAN_SELECTION = "mypage/subscription/plan-selection"
+  const val MYPAGE_PAYMENT_METHOD = "mypage/subscription/payment-method"
   const val MYPAGE_PURCHASE_HISTORY = "mypage/purchase-history"
   const val MYPAGE_TRANSACTION_DETAIL = "mypage/transaction/{id}"
   const val PAYWALL = "paywall"

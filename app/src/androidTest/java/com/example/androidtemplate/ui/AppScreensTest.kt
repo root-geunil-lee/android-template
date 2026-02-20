@@ -15,6 +15,7 @@ import com.example.androidtemplate.features.auth.OtpFlowState
 import com.example.androidtemplate.features.auth.OtpVerifyScreen
 import com.example.androidtemplate.features.auth.OAuthFlowState
 import com.example.androidtemplate.features.mypage.MyPageScreen
+import com.example.androidtemplate.features.mypage.SubscriptionScreen
 import org.junit.Rule
 import org.junit.Test
 
@@ -99,5 +100,22 @@ class AppScreensTest {
     composeRule.onNodeWithText("Purchase History").assertIsDisplayed()
     composeRule.onNodeWithText("Log out").assertIsDisplayed()
     composeRule.onNodeWithText("Delete Account").assertIsDisplayed()
+  }
+
+  @Test
+  fun subscriptionScreen_showsManageActions() {
+    composeRule.setContent {
+      SubscriptionScreen(
+        onBack = {},
+        onOpenPlanSelection = {},
+        onOpenPaymentMethod = {},
+        onOpenStoreSubscription = {},
+      )
+    }
+
+    composeRule.onNodeWithText("Change Plan").assertIsDisplayed()
+    composeRule.onNodeWithText("Payment Method").assertIsDisplayed()
+    composeRule.onNodeWithText("Manage in App Store").assertIsDisplayed()
+    composeRule.onNodeWithText("Cancel Subscription").assertIsDisplayed()
   }
 }
