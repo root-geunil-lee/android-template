@@ -1,7 +1,6 @@
 package com.example.androidtemplate
 
 import android.net.Uri
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,6 +38,7 @@ import com.example.androidtemplate.features.auth.EmailSignInScreen
 import com.example.androidtemplate.features.auth.OtpAuthUseCase
 import com.example.androidtemplate.features.auth.OtpFlowState
 import com.example.androidtemplate.features.auth.OtpVerifyScreen
+import com.example.androidtemplate.features.billing.PaywallResult
 import com.example.androidtemplate.features.billing.PaywallSheetRoute
 import com.example.androidtemplate.features.home.HomeScreen
 import com.example.androidtemplate.features.mypage.MyPageRoute
@@ -120,6 +120,7 @@ private fun UnauthenticatedApp(onAuthenticated: () -> Unit) {
 private fun AuthenticatedApp(onLogout: () -> Unit) {
   val navController = rememberNavController()
   val snackbarHostState = remember { SnackbarHostState() }
+  var paywallResultMessage by rememberSaveable { mutableStateOf<String?>(null) }
 
   val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
   val isBottomBarVisible = currentRoute == AppRoutes.HOME || currentRoute == AppRoutes.MYPAGE
@@ -159,12 +160,22 @@ private fun AuthenticatedApp(onLogout: () -> Unit) {
       composable(AppRoutes.HOME) {
         HomeScreen(
           onOpenPaywall = { navController.navigate(AppRoutes.PAYWALL) },
+          paywallResultMessage = paywallResultMessage,
         )
       }
 
       composable(AppRoutes.PAYWALL) {
         PaywallSheetRoute(
           onClose = { navController.popBackStack() },
+          onResult = { result ->
+            paywallResultMessage = when (result) {
+              is PaywallResult.Purchased -> "Purchased: ${result.productId}"
+              is PaywallResult.Restored -> "Restored ${result.count} purchase(s)"
+              PaywallResult.Cancelled -> "Purchase cancelled"
+              PaywallResult.Pending -> "Purchase pending"
+              is PaywallResult.Failed -> result.message
+            }
+          },
         )
       }
 
@@ -197,7 +208,4 @@ private fun AuthenticatedApp(onLogout: () -> Unit) {
     }
   }
 
-  BackHandler(enabled = currentRoute == AppRoutes.PAYWALL) {
-    navController.popBackStack()
-  }
 }
