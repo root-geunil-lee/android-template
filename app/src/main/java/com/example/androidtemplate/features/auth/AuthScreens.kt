@@ -24,6 +24,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -32,6 +33,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -44,7 +46,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -61,6 +63,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -296,16 +299,9 @@ fun EmailSignInScreen(
 
   Scaffold(
     topBar = {
-      TopAppBar(
-        title = { Text("Sign in") },
-        navigationIcon = {
-          IconButton(onClick = onBack) {
-            Icon(
-              imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-              contentDescription = "Navigate up",
-            )
-          }
-        },
+      AuthFlowTopBar(
+        title = "Sign in",
+        onBack = onBack,
       )
     },
     containerColor = MaterialTheme.colorScheme.background,
@@ -331,6 +327,8 @@ fun EmailSignInScreen(
         onValueChange = { email = it.trim() },
         label = { Text("Email") },
         placeholder = { Text("Email") },
+        shape = RoundedCornerShape(12.dp),
+        singleLine = true,
         modifier = Modifier
           .fillMaxWidth()
           .testTag("email_input"),
@@ -467,16 +465,9 @@ fun OtpVerifyScreen(
 
   Scaffold(
     topBar = {
-      TopAppBar(
-        title = { Text("Verify") },
-        navigationIcon = {
-          IconButton(onClick = onBack) {
-            Icon(
-              imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-              contentDescription = "Navigate up",
-            )
-          }
-        },
+      AuthFlowTopBar(
+        title = "Verify",
+        onBack = onBack,
       )
     },
     containerColor = MaterialTheme.colorScheme.background,
@@ -494,6 +485,7 @@ fun OtpVerifyScreen(
       Text(
         text = "Enter verification code",
         style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.SemiBold,
       )
       Spacer(Modifier.height(8.dp))
       Text(
@@ -600,7 +592,10 @@ fun OtpVerifyScreen(
             contentColor = MaterialTheme.colorScheme.onSurface,
             disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
           ),
-          modifier = Modifier.testTag("otp_resend_button"),
+          contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp),
+          modifier = Modifier
+            .heightIn(min = 48.dp)
+            .testTag("otp_resend_button"),
         ) {
           Text("Resend code")
         }
@@ -621,13 +616,53 @@ fun OtpVerifyScreen(
           contentColor = MaterialTheme.colorScheme.onSurface,
           disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         ),
+        contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp),
         modifier = Modifier
+          .heightIn(min = 48.dp)
           .testTag("otp_change_email"),
       ) {
         Text("Change email")
       }
     }
   }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AuthFlowTopBar(
+  title: String,
+  onBack: () -> Unit,
+) {
+  CenterAlignedTopAppBar(
+    title = {
+      Text(
+        text = title,
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.SemiBold,
+      )
+    },
+    navigationIcon = {
+      IconButton(onClick = onBack) {
+        Box(
+          modifier = Modifier
+            .size(36.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+          contentAlignment = Alignment.Center,
+        ) {
+          Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = "Navigate up",
+          )
+        }
+      }
+    },
+    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+      containerColor = MaterialTheme.colorScheme.background,
+      scrolledContainerColor = MaterialTheme.colorScheme.background,
+      titleContentColor = MaterialTheme.colorScheme.onSurface,
+      navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+    ),
+  )
 }
 
 @Composable
