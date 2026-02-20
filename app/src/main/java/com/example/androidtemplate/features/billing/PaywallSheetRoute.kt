@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.androidtemplate.core.contracts.AndroidBillingContract
+import com.example.androidtemplate.core.ui.DesignTokens
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,7 +80,7 @@ fun PaywallSheetRoute(
       modifier = Modifier
         .fillMaxWidth()
         .windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.navigationBars)
-        .padding(20.dp),
+        .padding(DesignTokens.Spacing.BaseHorizontalDp.dp),
       verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
       Text("Choose your plan", style = MaterialTheme.typography.titleLarge)

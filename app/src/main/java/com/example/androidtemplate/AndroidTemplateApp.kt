@@ -57,6 +57,7 @@ import com.example.androidtemplate.features.mypage.PurchaseHistoryScreen
 import com.example.androidtemplate.features.mypage.SubscriptionScreen
 import com.example.androidtemplate.features.mypage.TransactionDetailScreen
 import com.example.androidtemplate.features.mypage.EditProfileScreen
+import com.example.androidtemplate.core.ui.DesignTokens
 import com.example.androidtemplate.core.ui.effectiveHorizontalPaddingPx
 import kotlinx.coroutines.launch
 
@@ -334,7 +335,7 @@ private fun AuthenticatedApp(
 @Composable
 private fun rememberHorizontalContentPadding() = with(LocalDensity.current) {
   val layoutDirection = LocalLayoutDirection.current
-  val baselinePx = 20.dp.roundToPx()
+  val baselinePx = DesignTokens.Spacing.BaseHorizontalDp.dp.roundToPx()
   val safeInsetLeftPx = WindowInsets.safeDrawing.getLeft(this, layoutDirection)
   val safeInsetRightPx = WindowInsets.safeDrawing.getRight(this, layoutDirection)
   effectiveHorizontalPaddingPx(
