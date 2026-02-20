@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -55,7 +57,10 @@ fun AuthMethodsScreen(
   val isBusy = oauthState == OAuthFlowState.HandlingCallback
 
   Column(
-    modifier = Modifier.fillMaxSize(),
+    modifier = Modifier
+      .fillMaxSize()
+      .verticalScroll(rememberScrollState())
+      .testTag("auth_methods_scroll"),
     verticalArrangement = Arrangement.Center,
   ) {
     Text("Sign in", style = MaterialTheme.typography.headlineMedium)
@@ -93,7 +98,10 @@ fun EmailSignInScreen(
   }
 
   Column(
-    modifier = Modifier.fillMaxSize(),
+    modifier = Modifier
+      .fillMaxSize()
+      .verticalScroll(rememberScrollState())
+      .testTag("email_sign_in_scroll"),
     verticalArrangement = Arrangement.Center,
   ) {
     Text("Email Sign In", style = MaterialTheme.typography.titleLarge)
@@ -190,7 +198,10 @@ fun OtpVerifyScreen(
   }
 
   Column(
-    modifier = Modifier.fillMaxSize(),
+    modifier = Modifier
+      .fillMaxSize()
+      .verticalScroll(rememberScrollState())
+      .testTag("otp_verify_scroll"),
     verticalArrangement = Arrangement.Center,
   ) {
     Text("Verify OTP", style = MaterialTheme.typography.titleLarge)
