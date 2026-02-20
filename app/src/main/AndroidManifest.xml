@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
   <application
+    android:name=".AndroidTemplateApplication"
     android:allowBackup="true"
     android:icon="@android:drawable/sym_def_app_icon"
     android:label="android-template"
@@ -21,9 +22,9 @@
         <category android:name="android.intent.category.BROWSABLE" />
 
         <data
-          android:host="auth"
-          android:pathPrefix="/callback"
-          android:scheme="androidtemplate" />
+          android:host="${SUPABASE_REDIRECT_HOST}"
+          android:pathPrefix="${SUPABASE_REDIRECT_PATH_PREFIX}"
+          android:scheme="${SUPABASE_REDIRECT_SCHEME}" />
       </intent-filter>
     </activity>
   </application>

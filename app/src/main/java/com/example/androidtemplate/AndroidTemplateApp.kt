@@ -117,6 +117,11 @@ private fun UnauthenticatedApp(
   NavHost(
     navController = navController,
     startDestination = AppRoutes.AUTH_METHODS,
+    modifier = Modifier
+      .fillMaxSize()
+      .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+      .imePadding()
+      .padding(horizontal = 20.dp),
   ) {
     composable(AppRoutes.AUTH_METHODS) {
       AuthMethodsScreen(

@@ -1,3 +1,5 @@
+import java.net.URI
+
 fun toBuildConfigString(value: String): String {
   return "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
 }
@@ -6,6 +8,8 @@ plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
+  alias(libs.plugins.hilt.android)
+  id("org.jetbrains.kotlin.kapt")
 }
 
 android {
@@ -17,6 +21,10 @@ android {
   val supabaseRedirectUrl = providers.gradleProperty("SUPABASE_REDIRECT_URL")
     .orElse("androidtemplate://auth/callback")
     .get()
+  val redirectUri = runCatching { URI(supabaseRedirectUrl) }.getOrNull()
+  val redirectScheme = redirectUri?.scheme ?: "androidtemplate"
+  val redirectHost = redirectUri?.host ?: "auth"
+  val redirectPathPrefix = redirectUri?.path?.takeIf { it.isNotBlank() } ?: "/callback"
 
   defaultConfig {
     applicationId = "com.example.androidtemplate"
@@ -27,6 +35,9 @@ android {
 
     buildConfigField("String", "AUTH_BASE_URL", toBuildConfigString(authBaseUrl))
     buildConfigField("String", "SUPABASE_REDIRECT_URL", toBuildConfigString(supabaseRedirectUrl))
+    manifestPlaceholders["SUPABASE_REDIRECT_SCHEME"] = redirectScheme
+    manifestPlaceholders["SUPABASE_REDIRECT_HOST"] = redirectHost
+    manifestPlaceholders["SUPABASE_REDIRECT_PATH_PREFIX"] = redirectPathPrefix
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -81,6 +92,8 @@ dependencies {
   implementation(libs.androidx.compose.material3)
   implementation(libs.androidx.navigation.compose)
   implementation(libs.androidx.security.crypto)
+  implementation(libs.hilt.android)
+  kapt(libs.hilt.compiler)
 
   testImplementation(libs.junit4)
   androidTestImplementation(libs.androidx.junit)
