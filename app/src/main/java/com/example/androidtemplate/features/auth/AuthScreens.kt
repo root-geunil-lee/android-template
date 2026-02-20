@@ -85,155 +85,163 @@ fun AuthMethodsScreen(
   }
   val isBusy = oauthState == OAuthFlowState.HandlingCallback
 
-  Column(
-    modifier = Modifier
-      .fillMaxSize()
-      .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))
-      .verticalScroll(rememberScrollState())
-      // Auth graph host already applies status bar insets; keep +32dp breathing room per spec.
-      .padding(top = 32.dp)
-      .testTag("auth_methods_scroll"),
-    verticalArrangement = Arrangement.Top,
-  ) {
-    Text("Sign in", style = MaterialTheme.typography.headlineMedium)
-    if (!oauthMessage.isNullOrBlank()) {
-      Spacer(Modifier.height(8.dp))
-      Text(
-        text = oauthMessage,
-        color = MaterialTheme.colorScheme.error,
+  Scaffold(
+    topBar = {
+      AuthFlowTopBar(
+        title = "Sign in",
+        onBack = null,
       )
-    }
-    Spacer(Modifier.height(24.dp))
-    // Keep iOS parity for copy/entry points while using Android-native M3 hierarchy.
-    // Google is the single primary action, Apple is secondary outline, Kakao is tertiary tonal,
-    // and Email stays lightweight as text action.
+    },
+    containerColor = MaterialTheme.colorScheme.background,
+  ) { innerPadding ->
     Column(
-      verticalArrangement = Arrangement.spacedBy(16.dp),
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier
+        .fillMaxSize()
+        .padding(innerPadding)
+        .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))
+        .verticalScroll(rememberScrollState())
+        .padding(top = 24.dp)
+        .testTag("auth_methods_scroll"),
+      verticalArrangement = Arrangement.Top,
     ) {
-      Button(
-        onClick = onGoogle,
-        enabled = !isBusy,
-        shape = RoundedCornerShape(24.dp),
-        elevation = ButtonDefaults.buttonElevation(
-          defaultElevation = 1.dp,
-          pressedElevation = 1.dp,
-          focusedElevation = 1.dp,
-          hoveredElevation = 1.dp,
-          disabledElevation = 0.dp,
-        ),
-        colors = ButtonDefaults.buttonColors(
-          containerColor = MaterialTheme.colorScheme.primary,
-          contentColor = MaterialTheme.colorScheme.onPrimary,
-          disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-          disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        ),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-        modifier = Modifier
-          .fillMaxWidth()
-          .heightIn(min = 56.dp)
-          .semantics { contentDescription = "Continue with Google" }
-          .testTag("auth_provider_0_google"),
-      ) {
-        AuthProviderLabel(
-          badge = "G",
-          text = "Continue with Google",
-          badgeContainerColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f),
-          badgeContentColor = MaterialTheme.colorScheme.onPrimary,
+      if (!oauthMessage.isNullOrBlank()) {
+        Text(
+          text = oauthMessage,
+          color = MaterialTheme.colorScheme.error,
         )
+        Spacer(Modifier.height(8.dp))
       }
-
-      OutlinedButton(
-        onClick = onApple,
-        enabled = !isBusy,
-        shape = RoundedCornerShape(24.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        elevation = ButtonDefaults.buttonElevation(
-          defaultElevation = 0.dp,
-          pressedElevation = 0.dp,
-          focusedElevation = 0.dp,
-          hoveredElevation = 0.dp,
-          disabledElevation = 0.dp,
-        ),
-        colors = ButtonDefaults.outlinedButtonColors(
-          contentColor = MaterialTheme.colorScheme.onSurface,
-          disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        ),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-        modifier = Modifier
-          .fillMaxWidth()
-          .heightIn(min = 56.dp)
-          .semantics { contentDescription = "Continue with Apple" }
-          .testTag("auth_provider_1_apple"),
+      // Keep iOS parity for copy/entry points while using Android-native M3 hierarchy.
+      // Google is the single primary action, Apple is secondary outline, Kakao is tertiary tonal,
+      // and Email stays lightweight as text action.
+      Column(
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.fillMaxWidth(),
       ) {
-        AuthProviderLabel(
-          badge = "A",
-          text = "Continue with Apple",
-          badgeContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-          badgeContentColor = MaterialTheme.colorScheme.onSurface,
-        )
-      }
+        Button(
+          onClick = onGoogle,
+          enabled = !isBusy,
+          shape = RoundedCornerShape(24.dp),
+          elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 1.dp,
+            pressedElevation = 1.dp,
+            focusedElevation = 1.dp,
+            hoveredElevation = 1.dp,
+            disabledElevation = 0.dp,
+          ),
+          colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+          ),
+          contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+          modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .semantics { contentDescription = "Continue with Google" }
+            .testTag("auth_provider_0_google"),
+        ) {
+          AuthProviderLabel(
+            badge = "G",
+            text = "Continue with Google",
+            badgeContainerColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f),
+            badgeContentColor = MaterialTheme.colorScheme.onPrimary,
+          )
+        }
 
-      FilledTonalButton(
-        onClick = onKakao,
-        enabled = !isBusy,
-        shape = RoundedCornerShape(24.dp),
-        elevation = ButtonDefaults.buttonElevation(
-          defaultElevation = 0.dp,
-          pressedElevation = 0.dp,
-          focusedElevation = 0.dp,
-          hoveredElevation = 0.dp,
-          disabledElevation = 0.dp,
-        ),
-        colors = ButtonDefaults.filledTonalButtonColors(
-          containerColor = MaterialTheme.colorScheme.surfaceVariant,
-          contentColor = MaterialTheme.colorScheme.onSurface,
-          disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-          disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        ),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-        modifier = Modifier
-          .fillMaxWidth()
-          .heightIn(min = 56.dp)
-          .semantics { contentDescription = "Continue with Kakao" }
-          .testTag("auth_provider_2_kakao"),
-      ) {
-        AuthProviderLabel(
-          badge = "K",
-          text = "Continue with Kakao",
-          badgeContainerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
-          badgeContentColor = MaterialTheme.colorScheme.onSurface,
-        )
-      }
+        OutlinedButton(
+          onClick = onApple,
+          enabled = !isBusy,
+          shape = RoundedCornerShape(24.dp),
+          border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+          elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 0.dp,
+            focusedElevation = 0.dp,
+            hoveredElevation = 0.dp,
+            disabledElevation = 0.dp,
+          ),
+          colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+          ),
+          contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+          modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .semantics { contentDescription = "Continue with Apple" }
+            .testTag("auth_provider_1_apple"),
+        ) {
+          AuthProviderLabel(
+            badge = "A",
+            text = "Continue with Apple",
+            badgeContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            badgeContentColor = MaterialTheme.colorScheme.onSurface,
+          )
+        }
 
-      TextButton(
-        onClick = onContinueWithEmail,
-        enabled = !isBusy,
-        shape = RoundedCornerShape(24.dp),
-        elevation = ButtonDefaults.buttonElevation(
-          defaultElevation = 0.dp,
-          pressedElevation = 0.dp,
-          focusedElevation = 0.dp,
-          hoveredElevation = 0.dp,
-          disabledElevation = 0.dp,
-        ),
-        colors = ButtonDefaults.textButtonColors(
-          contentColor = MaterialTheme.colorScheme.onSurface,
-          disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        ),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-        modifier = Modifier
-          .fillMaxWidth()
-          .heightIn(min = 56.dp)
-          .semantics { contentDescription = "Continue with Email" }
-          .testTag("auth_provider_3_email"),
-      ) {
-        AuthProviderLabel(
-          badge = "@",
-          text = "Continue with Email",
-          badgeContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-          badgeContentColor = MaterialTheme.colorScheme.onSurface,
-        )
+        FilledTonalButton(
+          onClick = onKakao,
+          enabled = !isBusy,
+          shape = RoundedCornerShape(24.dp),
+          elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 0.dp,
+            focusedElevation = 0.dp,
+            hoveredElevation = 0.dp,
+            disabledElevation = 0.dp,
+          ),
+          colors = ButtonDefaults.filledTonalButtonColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+          ),
+          contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+          modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .semantics { contentDescription = "Continue with Kakao" }
+            .testTag("auth_provider_2_kakao"),
+        ) {
+          AuthProviderLabel(
+            badge = "K",
+            text = "Continue with Kakao",
+            badgeContainerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+            badgeContentColor = MaterialTheme.colorScheme.onSurface,
+          )
+        }
+
+        TextButton(
+          onClick = onContinueWithEmail,
+          enabled = !isBusy,
+          shape = RoundedCornerShape(24.dp),
+          elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 0.dp,
+            focusedElevation = 0.dp,
+            hoveredElevation = 0.dp,
+            disabledElevation = 0.dp,
+          ),
+          colors = ButtonDefaults.textButtonColors(
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+          ),
+          contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+          modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .semantics { contentDescription = "Continue with Email" }
+            .testTag("auth_provider_3_email"),
+        ) {
+          AuthProviderLabel(
+            badge = "@",
+            text = "Continue with Email",
+            badgeContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            badgeContentColor = MaterialTheme.colorScheme.onSurface,
+          )
+        }
       }
     }
   }
@@ -494,12 +502,6 @@ fun OtpVerifyScreen(
         style = MaterialTheme.typography.bodyMedium,
         modifier = Modifier.testTag("otp_subtext"),
       )
-      Spacer(Modifier.height(8.dp))
-      Text(
-        text = "Code expires in 10 minutes.",
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        style = MaterialTheme.typography.bodyMedium,
-      )
 
       Spacer(Modifier.height(24.dp))
       BasicTextField(
@@ -534,6 +536,12 @@ fun OtpVerifyScreen(
         focusRequester = focusRequester,
         isInputEnabled = !isVerifying,
         isInputFocused = otpFieldHasFocus,
+      )
+      Spacer(Modifier.height(8.dp))
+      Text(
+        text = "Code expires in 10 minutes.",
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.bodyMedium,
       )
 
       if (!backendMessage.isNullOrBlank()) {
@@ -631,7 +639,7 @@ fun OtpVerifyScreen(
 @Composable
 private fun AuthFlowTopBar(
   title: String,
-  onBack: () -> Unit,
+  onBack: (() -> Unit)?,
 ) {
   CenterAlignedTopAppBar(
     title = {
@@ -642,17 +650,19 @@ private fun AuthFlowTopBar(
       )
     },
     navigationIcon = {
-      IconButton(onClick = onBack) {
-        Box(
-          modifier = Modifier
-            .size(36.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
-          contentAlignment = Alignment.Center,
-        ) {
-          Icon(
-            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-            contentDescription = "Navigate up",
-          )
+      if (onBack != null) {
+        IconButton(onClick = onBack) {
+          Box(
+            modifier = Modifier
+              .size(36.dp)
+              .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+            contentAlignment = Alignment.Center,
+          ) {
+            Icon(
+              imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+              contentDescription = "Navigate up",
+            )
+          }
         }
       }
     },
@@ -692,12 +702,12 @@ private fun OtpDigitSlots(
             color = when {
               isActiveSlot -> MaterialTheme.colorScheme.primary
               digit.isBlank() -> MaterialTheme.colorScheme.outline
-              else -> MaterialTheme.colorScheme.primary
+              else -> MaterialTheme.colorScheme.outline
             },
             shape = RoundedCornerShape(12.dp),
           )
           .background(
-            color = MaterialTheme.colorScheme.surface,
+            color = MaterialTheme.colorScheme.surfaceVariant,
             shape = RoundedCornerShape(12.dp),
           )
           .clickable(enabled = isInputEnabled, onClick = { focusRequester.requestFocus() })
