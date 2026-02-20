@@ -3,7 +3,10 @@ package com.example.androidtemplate.features.billing
 import com.example.androidtemplate.core.ui.UiEvent
 import com.example.androidtemplate.core.ui.UiState
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Test
@@ -47,8 +50,13 @@ class PaywallUiStoreTest {
     )
     uiStore.load()
 
+    val eventDeferred = CompletableDeferred<UiEvent>()
+    val eventJob = launch(start = CoroutineStart.UNDISPATCHED) {
+      eventDeferred.complete(uiStore.events.first())
+    }
     uiStore.purchase("monthly")
-    val event = withTimeout(1000) { uiStore.events.first() }
+    val event = withTimeout(1000) { eventDeferred.await() }
+    eventJob.cancel()
 
     assertThat(event).isEqualTo(UiEvent.DismissSheet(PAYWALL_SHEET_ID))
   }
@@ -65,8 +73,13 @@ class PaywallUiStoreTest {
     )
     uiStore.load()
 
+    val eventDeferred = CompletableDeferred<UiEvent>()
+    val eventJob = launch(start = CoroutineStart.UNDISPATCHED) {
+      eventDeferred.complete(uiStore.events.first())
+    }
     uiStore.purchase("monthly")
-    val event = withTimeout(1000) { uiStore.events.first() }
+    val event = withTimeout(1000) { eventDeferred.await() }
+    eventJob.cancel()
 
     assertThat(event).isEqualTo(UiEvent.ShowSnackbar("Purchase cancelled"))
   }

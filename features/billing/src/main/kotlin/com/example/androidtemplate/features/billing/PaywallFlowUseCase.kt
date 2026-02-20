@@ -6,14 +6,22 @@ class PaywallFlowUseCase(
   private val billingStore: BillingStoreContract,
   private val syncService: BillingSyncContract,
 ) {
+  private var cachedProducts: List<BillingProduct>? = null
+
   var state: PaywallState = PaywallState.Idle
     private set
 
   suspend fun loadProducts(): PaywallState {
+    cachedProducts?.takeIf { it.isNotEmpty() }?.let { products ->
+      state = PaywallState.Ready(products = products)
+      return state
+    }
+
     state = PaywallState.LoadingProducts
 
     val products = billingStore.queryProducts(AndroidBillingContract.PRODUCT_IDS)
       .sortedBy { AndroidBillingContract.PRODUCT_IDS.indexOf(it.id) }
+    cachedProducts = products
 
     state = PaywallState.Ready(products = products)
     return state

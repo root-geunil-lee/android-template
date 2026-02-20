@@ -24,6 +24,20 @@ class PaywallFlowUseCaseTest {
   }
 
   @Test
+  fun loadProducts_usesInMemoryCacheWithinSession() = runBlocking {
+    val fakeStore = FakeBillingStore()
+    val useCase = PaywallFlowUseCase(
+      billingStore = fakeStore,
+      syncService = FakeBillingSyncService(),
+    )
+
+    useCase.loadProducts()
+    useCase.loadProducts()
+
+    assertThat(fakeStore.queryProductsCallCount).isEqualTo(1)
+  }
+
+  @Test
   fun purchase_cancelled_mapsToCancelledResult() = runBlocking {
     val fakeStore = FakeBillingStore(purchaseOutcome = StorePurchaseOutcome.Cancelled)
     val useCase = PaywallFlowUseCase(
@@ -217,8 +231,10 @@ class PaywallFlowUseCaseTest {
     private val restorePurchases: List<StorePurchase> = emptyList(),
   ) : BillingStoreContract {
     var lastQueriedProductIds: List<String> = emptyList()
+    var queryProductsCallCount: Int = 0
 
     override suspend fun queryProducts(productIds: List<String>): List<BillingProduct> {
+      queryProductsCallCount += 1
       lastQueriedProductIds = productIds
       return products
     }
