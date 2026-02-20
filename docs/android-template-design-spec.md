@@ -292,7 +292,7 @@ root
 - [x] Edge-to-edge and insets rules applied on all affected screens
 - [x] Predictive back order implemented (sheet > dialog > pop > exit)
 - [x] Dialog/sheet behavior matches contract
-- [ ] A11y baseline passed (48dp, TalkBack, font scaling)
+- [x] A11y baseline passed (48dp, TalkBack, font scaling)
 - [x] Per-PR test minimum met (unit + integration + UI)
 
 ## 13. Non-goals
