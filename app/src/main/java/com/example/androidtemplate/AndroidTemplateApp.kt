@@ -5,17 +5,24 @@ import android.net.Uri
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -30,7 +37,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -38,6 +50,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import com.example.androidtemplate.auth.AuthCallbackBus
 import com.example.androidtemplate.core.navigation.AppRoutes
 import com.example.androidtemplate.features.auth.AuthMethodsScreen
@@ -214,6 +227,12 @@ private fun AuthenticatedApp(
   val horizontalPadding = rememberHorizontalContentPadding()
   val billingSyncService = remember { provideBillingSyncService() }
   var paywallResultMessage by rememberSaveable { mutableStateOf<String?>(null) }
+  val bottomDestinations = remember {
+    listOf(
+      BottomDestination(route = AppRoutes.HOME, label = "Home", icon = Icons.Filled.Home),
+      BottomDestination(route = AppRoutes.MYPAGE, label = "My Page", icon = Icons.Filled.Person),
+    )
+  }
 
   val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
   val isBottomBarVisible = currentRoute == AppRoutes.HOME || currentRoute == AppRoutes.MYPAGE
@@ -226,19 +245,57 @@ private fun AuthenticatedApp(
     snackbarHost = { SnackbarHost(snackbarHostState) },
     bottomBar = {
       if (isBottomBarVisible) {
-        NavigationBar {
-          NavigationBarItem(
-            selected = currentRoute == AppRoutes.HOME,
-            onClick = { navController.navigate(AppRoutes.HOME) },
-            label = { Text("Home") },
-            icon = { Text("H") },
-          )
-          NavigationBarItem(
-            selected = currentRoute == AppRoutes.MYPAGE,
-            onClick = { navController.navigate(AppRoutes.MYPAGE) },
-            label = { Text("My Page") },
-            icon = { Text("M") },
-          )
+        Surface(
+          modifier = Modifier
+            .fillMaxWidth()
+            .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)),
+          color = MaterialTheme.colorScheme.surface,
+          tonalElevation = 2.dp,
+          shadowElevation = 3.dp,
+          shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        ) {
+          NavigationBar(
+            modifier = Modifier.height(80.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp,
+            windowInsets = WindowInsets(0, 0, 0, 0),
+          ) {
+            bottomDestinations.forEach { destination ->
+              val selected = currentRoute == destination.route
+              NavigationBarItem(
+                selected = selected,
+                onClick = {
+                  navController.navigate(destination.route) {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                      saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                  }
+                },
+                label = {
+                  Text(
+                    text = destination.label,
+                    fontSize = 12.sp,
+                  )
+                },
+                icon = {
+                  Icon(
+                    imageVector = destination.icon,
+                    contentDescription = destination.label,
+                    modifier = Modifier.size(24.dp),
+                  )
+                },
+                colors = NavigationBarItemDefaults.colors(
+                  selectedIconColor = MaterialTheme.colorScheme.onSurface,
+                  selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                  unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                  unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                  indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                ),
+              )
+            }
+          }
         }
       }
     },
@@ -372,14 +429,13 @@ private fun AuthenticatedApp(
       }
     }
   }
-
-  if (currentRoute !in listOf(AppRoutes.HOME, AppRoutes.MYPAGE, AppRoutes.MYPAGE_EDIT_PROFILE, AppRoutes.MYPAGE_SUBSCRIPTION, AppRoutes.MYPAGE_PLAN_SELECTION, AppRoutes.MYPAGE_PAYMENT_METHOD, AppRoutes.MYPAGE_PURCHASE_HISTORY, AppRoutes.MYPAGE_TRANSACTION_DETAIL, AppRoutes.PAYWALL)) {
-    Button(onClick = { navController.navigate(AppRoutes.HOME) }) {
-      Text("Go Home")
-    }
-  }
-
 }
+
+private data class BottomDestination(
+  val route: String,
+  val label: String,
+  val icon: androidx.compose.ui.graphics.vector.ImageVector,
+)
 
 @Composable
 private fun rememberHorizontalContentPadding() = with(LocalDensity.current) {
