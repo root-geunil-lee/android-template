@@ -6,9 +6,11 @@ import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -19,6 +21,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import com.example.androidtemplate.features.auth.AuthMethodsScreen
+import com.example.androidtemplate.features.auth.EmailSignInScreen
 import com.example.androidtemplate.features.auth.OtpFlowState
 import com.example.androidtemplate.features.auth.OtpVerifyScreen
 import com.example.androidtemplate.features.auth.OAuthFlowState
@@ -124,6 +127,25 @@ class AppScreensTest {
   }
 
   @Test
+  fun emailSignInScreen_matchesParityCopyAndValidation() {
+    composeRule.setContent {
+      EmailSignInScreen(
+        state = OtpFlowState.Idle,
+        onBack = {},
+        onSendCode = {},
+      )
+    }
+
+    composeRule.onNodeWithText("Sign in").assertIsDisplayed()
+    composeRule.onNodeWithText("Enter your email to receive a one-time verification code.").assertIsDisplayed()
+    composeRule.onNodeWithText("Email").assertIsDisplayed()
+    composeRule.onNodeWithTag("email_send_cta").assertIsNotEnabled()
+
+    composeRule.onNodeWithTag("email_input").performTextInput("user@example.com")
+    composeRule.onNodeWithTag("email_send_cta").assertIsEnabled()
+  }
+
+  @Test
   fun otpVerifyScreen_rendersSixAccessibleSlots_andAcceptsPastedDigitsOnly() {
     composeRule.setContent {
       OtpVerifyScreen(
@@ -143,11 +165,11 @@ class AppScreensTest {
       composeRule.onNodeWithContentDescription("digit ${index + 1} of 6").assertIsDisplayed()
     }
 
-    composeRule.onNodeWithText("Verify").assertIsEnabled()
+    composeRule.onNodeWithTag("otp_verify_button").assertIsEnabled()
   }
 
   @Test
-  fun otpVerifyScreen_largeFontScale_keepsBackActionReachable() {
+  fun otpVerifyScreen_largeFontScale_keepsChangeEmailActionReachable() {
     composeRule.setContent {
       CompositionLocalProvider(
         LocalDensity provides Density(density = 1f, fontScale = 2f),
@@ -162,8 +184,8 @@ class AppScreensTest {
       }
     }
 
-    composeRule.onNodeWithTag("otp_verify_scroll").performScrollToNode(hasText("Back"))
-    composeRule.onNodeWithText("Back").assertIsDisplayed()
+    composeRule.onNodeWithTag("otp_verify_scroll").performScrollToNode(hasText("Change email"))
+    composeRule.onNodeWithText("Change email").assertIsDisplayed()
   }
 
   @Test
@@ -179,6 +201,26 @@ class AppScreensTest {
     }
 
     composeRule.onNodeWithText("Resend in 01:00").assertIsDisplayed()
+  }
+
+  @Test
+  fun otpVerifyScreen_matchesParityCopy() {
+    composeRule.setContent {
+      OtpVerifyScreen(
+        email = "user@example.com",
+        state = OtpFlowState.SentCode(email = "user@example.com", cooldownSeconds = 60),
+        onBack = {},
+        onResendCode = {},
+        onVerifyCode = {},
+      )
+    }
+
+    composeRule.onAllNodesWithText("Verify").assertCountEquals(2)
+    composeRule.onNodeWithText("Enter verification code").assertIsDisplayed()
+    composeRule.onNodeWithText("Code expires in 10 minutes.").assertIsDisplayed()
+    composeRule.onNodeWithTag("otp_subtext").assertTextContains("We sent a 6-digit code to user@example.com")
+    composeRule.onNodeWithText("Resend code").assertIsDisplayed()
+    composeRule.onNodeWithText("Change email").assertIsDisplayed()
   }
 
   @Test
