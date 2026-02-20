@@ -6,6 +6,7 @@ object AppRoutes {
   const val AUTH_OTP = "auth/otp?email={email}"
   const val HOME = "home"
   const val MYPAGE = "mypage"
+  const val MYPAGE_EDIT_PROFILE = "mypage/edit-profile"
   const val MYPAGE_SUBSCRIPTION = "mypage/subscription"
   const val MYPAGE_PURCHASE_HISTORY = "mypage/purchase-history"
   const val MYPAGE_TRANSACTION_DETAIL = "mypage/transaction/{id}"
