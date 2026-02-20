@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -37,10 +39,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.browser.customtabs.CustomTabsIntent
@@ -283,7 +286,13 @@ private fun AuthenticatedApp(
                   Icon(
                     imageVector = destination.icon,
                     contentDescription = destination.label,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier
+                      .clip(RoundedCornerShape(16.dp))
+                      .background(
+                        if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                      )
+                      .padding(horizontal = 12.dp, vertical = 6.dp)
+                      .size(24.dp),
                   )
                 },
                 colors = NavigationBarItemDefaults.colors(
@@ -291,7 +300,7 @@ private fun AuthenticatedApp(
                   selectedTextColor = MaterialTheme.colorScheme.onSurface,
                   unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                   unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                  indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                  indicatorColor = Color.Transparent,
                 ),
               )
             }
