@@ -21,6 +21,12 @@ android {
   val supabaseRedirectUrl = providers.gradleProperty("SUPABASE_REDIRECT_URL")
     .orElse("androidtemplate://auth/callback")
     .get()
+  val apiBaseUrl = providers.gradleProperty("API_BASE_URL").orElse("").get()
+  val billingSyncEnabled = providers.gradleProperty("BILLING_SYNC_ENABLED")
+    .orElse("false")
+    .get()
+    .toBooleanStrictOrNull() ?: false
+  val billingBearerToken = providers.gradleProperty("BILLING_BEARER_TOKEN").orElse("").get()
   val redirectUri = runCatching { URI(supabaseRedirectUrl) }.getOrNull()
   val redirectScheme = redirectUri?.scheme ?: "androidtemplate"
   val redirectHost = redirectUri?.host ?: "auth"
@@ -35,6 +41,9 @@ android {
 
     buildConfigField("String", "AUTH_BASE_URL", toBuildConfigString(authBaseUrl))
     buildConfigField("String", "SUPABASE_REDIRECT_URL", toBuildConfigString(supabaseRedirectUrl))
+    buildConfigField("String", "API_BASE_URL", toBuildConfigString(apiBaseUrl))
+    buildConfigField("boolean", "BILLING_SYNC_ENABLED", billingSyncEnabled.toString())
+    buildConfigField("String", "BILLING_BEARER_TOKEN", toBuildConfigString(billingBearerToken))
     manifestPlaceholders["SUPABASE_REDIRECT_SCHEME"] = redirectScheme
     manifestPlaceholders["SUPABASE_REDIRECT_HOST"] = redirectHost
     manifestPlaceholders["SUPABASE_REDIRECT_PATH_PREFIX"] = redirectPathPrefix

@@ -52,6 +52,7 @@ import com.example.androidtemplate.features.auth.OtpVerifyScreen
 import com.example.androidtemplate.features.billing.PaywallResult
 import com.example.androidtemplate.features.billing.PaywallSyncStatus
 import com.example.androidtemplate.features.billing.PaywallSheetRoute
+import com.example.androidtemplate.features.billing.provideBillingSyncService
 import com.example.androidtemplate.features.home.HomeScreen
 import com.example.androidtemplate.features.mypage.MyPageRoute
 import com.example.androidtemplate.features.mypage.PurchaseHistoryScreen
@@ -209,6 +210,7 @@ private fun AuthenticatedApp(
   val coroutineScope = rememberCoroutineScope()
   val snackbarHostState = remember { SnackbarHostState() }
   val horizontalPadding = rememberHorizontalContentPadding()
+  val billingSyncService = remember { provideBillingSyncService() }
   var paywallResultMessage by rememberSaveable { mutableStateOf<String?>(null) }
 
   val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
@@ -256,6 +258,7 @@ private fun AuthenticatedApp(
       composable(AppRoutes.PAYWALL) {
         PaywallSheetRoute(
           onClose = { navController.popBackStack() },
+          syncService = billingSyncService,
           onResult = { result ->
             paywallResultMessage = when (result) {
               is PaywallResult.Purchased -> {

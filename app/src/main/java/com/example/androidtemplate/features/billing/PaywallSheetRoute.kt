@@ -37,6 +37,7 @@ import kotlinx.coroutines.launch
 fun PaywallSheetRoute(
   onClose: () -> Unit,
   onResult: (PaywallResult) -> Unit,
+  syncService: BillingSyncContract = NoopBillingSyncService,
 ) {
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   val coroutineScope = rememberCoroutineScope()
@@ -44,7 +45,7 @@ fun PaywallSheetRoute(
     PaywallUiStore(
       useCase = PaywallFlowUseCase(
         billingStore = DemoBillingStore(),
-        syncService = NoopBillingSyncService,
+        syncService = syncService,
       ),
     )
   }
@@ -212,8 +213,4 @@ private class DemoBillingStore : BillingStoreContract {
       ),
     )
   }
-}
-
-private object NoopBillingSyncService : BillingSyncContract {
-  override suspend fun syncPurchase(purchase: StorePurchase): BillingSyncResult = BillingSyncResult.Skipped
 }
