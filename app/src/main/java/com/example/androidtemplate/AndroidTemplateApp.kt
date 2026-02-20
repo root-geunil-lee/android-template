@@ -178,6 +178,11 @@ private fun UnauthenticatedApp(
         email = email,
         state = otpFlowState,
         onBack = { navController.popBackStack() },
+        onResendCode = {
+          coroutineScope.launch {
+            otpFlowState = otpAuthUseCase.sendCode(email)
+          }
+        },
         onVerifyCode = { code ->
           coroutineScope.launch {
             otpFlowState = otpAuthUseCase.verifyCode(email = email, code = code)

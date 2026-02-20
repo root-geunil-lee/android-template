@@ -46,6 +46,7 @@ class AppScreensTest {
         email = "user@example.com",
         state = OtpFlowState.Idle,
         onBack = {},
+        onResendCode = {},
         onVerifyCode = {},
       )
     }
@@ -59,6 +60,21 @@ class AppScreensTest {
     }
 
     composeRule.onNodeWithText("Verify").assertIsEnabled()
+  }
+
+  @Test
+  fun otpVerifyScreen_showsResendCooldownMessage() {
+    composeRule.setContent {
+      OtpVerifyScreen(
+        email = "user@example.com",
+        state = OtpFlowState.SentCode(email = "user@example.com", cooldownSeconds = 60),
+        onBack = {},
+        onResendCode = {},
+        onVerifyCode = {},
+      )
+    }
+
+    composeRule.onNodeWithText("Resend in 01:00").assertIsDisplayed()
   }
 
   @Test

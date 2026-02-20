@@ -17,4 +17,10 @@ class OtpInputRulesTest {
     assertThat(otpSlotDescription(0)).isEqualTo("digit 1 of 6")
     assertThat(otpSlotDescription(5)).isEqualTo("digit 6 of 6")
   }
+
+  @Test
+  fun formatCooldownMmSs_formatsMinutesAndSeconds() {
+    assertThat(formatCooldownMmSs(65)).isEqualTo("01:05")
+    assertThat(formatCooldownMmSs(9)).isEqualTo("00:09")
+  }
 }

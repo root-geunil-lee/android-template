@@ -37,6 +37,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 
 @Composable
 fun AuthMethodsScreen(
@@ -133,10 +134,12 @@ fun OtpVerifyScreen(
   email: String,
   state: OtpFlowState,
   onBack: () -> Unit,
+  onResendCode: () -> Unit,
   onVerifyCode: (String) -> Unit,
 ) {
   var otp by rememberSaveable { mutableStateOf("") }
   var lastAutoSubmittedCode by rememberSaveable { mutableStateOf("") }
+  var resendCooldownSeconds by rememberSaveable(email) { mutableStateOf(0) }
   val focusRequester = remember { FocusRequester() }
 
   val backendMessage = when (state) {
@@ -149,11 +152,41 @@ fun OtpVerifyScreen(
     focusRequester.requestFocus()
   }
 
+  LaunchedEffect(state, email) {
+    when (state) {
+      is OtpFlowState.SentCode -> {
+        if (state.email == email) {
+          resendCooldownSeconds = state.cooldownSeconds
+        }
+      }
+      is OtpFlowState.RateLimited -> {
+        resendCooldownSeconds = maxOf(resendCooldownSeconds, state.retryAfterSeconds)
+      }
+      else -> Unit
+    }
+  }
+
+  LaunchedEffect(resendCooldownSeconds) {
+    if (resendCooldownSeconds > 0) {
+      delay(1000)
+      resendCooldownSeconds -= 1
+    }
+  }
+
   LaunchedEffect(otp, state) {
     if (otp.length == OTP_CODE_LENGTH && otp != lastAutoSubmittedCode && state != OtpFlowState.VerifyingCode) {
       lastAutoSubmittedCode = otp
       onVerifyCode(otp)
     }
+  }
+
+  val canResend = resendCooldownSeconds == 0 &&
+    state != OtpFlowState.SendingCode &&
+    state != OtpFlowState.VerifyingCode
+  val resendStatusText = when {
+    resendCooldownSeconds <= 0 -> null
+    state is OtpFlowState.RateLimited -> "Try again in ${formatCooldownMmSs(resendCooldownSeconds)}."
+    else -> "Resend in ${formatCooldownMmSs(resendCooldownSeconds)}"
   }
 
   Column(
@@ -197,6 +230,23 @@ fun OtpVerifyScreen(
       modifier = Modifier.fillMaxWidth(),
     ) {
       Text(if (state == OtpFlowState.VerifyingCode) "Verifying..." else "Verify")
+    }
+
+    Spacer(Modifier.height(8.dp))
+    Button(
+      onClick = onResendCode,
+      enabled = canResend,
+      modifier = Modifier.fillMaxWidth(),
+    ) {
+      Text("Resend code")
+    }
+
+    if (!resendStatusText.isNullOrBlank()) {
+      Spacer(Modifier.height(8.dp))
+      Text(
+        text = resendStatusText,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
     }
 
     Spacer(Modifier.height(8.dp))
