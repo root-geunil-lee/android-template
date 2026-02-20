@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -44,6 +44,8 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.browser.customtabs.CustomTabsIntent
@@ -245,6 +247,7 @@ private fun AuthenticatedApp(
       .fillMaxSize()
       .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
       .imePadding(),
+    containerColor = BottomNavPalette.AppBackground,
     snackbarHost = { SnackbarHost(snackbarHostState) },
     bottomBar = {
       if (isBottomBarVisible) {
@@ -252,14 +255,20 @@ private fun AuthenticatedApp(
           modifier = Modifier
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)),
-          color = MaterialTheme.colorScheme.surface,
+          color = BottomNavPalette.NavSurface,
           tonalElevation = 2.dp,
-          shadowElevation = 3.dp,
+          shadowElevation = 0.dp,
           shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         ) {
+          HorizontalDivider(
+            thickness = Dp.Hairline,
+            color = BottomNavPalette.TopDivider,
+          )
           NavigationBar(
-            modifier = Modifier.height(80.dp),
-            containerColor = MaterialTheme.colorScheme.surface,
+            modifier = Modifier
+              .height(80.dp)
+              .padding(horizontal = 16.dp),
+            containerColor = BottomNavPalette.NavSurface,
             tonalElevation = 0.dp,
             windowInsets = WindowInsets(0, 0, 0, 0),
           ) {
@@ -280,6 +289,7 @@ private fun AuthenticatedApp(
                   Text(
                     text = destination.label,
                     fontSize = 12.sp,
+                    fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
                   )
                 },
                 icon = {
@@ -289,17 +299,17 @@ private fun AuthenticatedApp(
                     modifier = Modifier
                       .clip(RoundedCornerShape(16.dp))
                       .background(
-                        if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                        if (selected) BottomNavPalette.SelectedIndicator else Color.Transparent,
                       )
                       .padding(horizontal = 12.dp, vertical = 6.dp)
                       .size(24.dp),
                   )
                 },
                 colors = NavigationBarItemDefaults.colors(
-                  selectedIconColor = MaterialTheme.colorScheme.onSurface,
-                  selectedTextColor = MaterialTheme.colorScheme.onSurface,
-                  unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                  unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                  selectedIconColor = BottomNavPalette.ActiveContent,
+                  selectedTextColor = BottomNavPalette.ActiveContent,
+                  unselectedIconColor = BottomNavPalette.InactiveContent,
+                  unselectedTextColor = BottomNavPalette.InactiveContent,
                   indicatorColor = Color.Transparent,
                 ),
               )
@@ -445,6 +455,15 @@ private data class BottomDestination(
   val label: String,
   val icon: androidx.compose.ui.graphics.vector.ImageVector,
 )
+
+private object BottomNavPalette {
+  val AppBackground = Color(0xFFFCFAF7)
+  val NavSurface = Color(0xFFF7F3EE)
+  val TopDivider = Color(0xFFE7E1D8)
+  val SelectedIndicator = Color(0xFFECE5DB)
+  val ActiveContent = Color(0xFF1C1A17)
+  val InactiveContent = Color(0xFF6F685E)
+}
 
 @Composable
 private fun rememberHorizontalContentPadding() = with(LocalDensity.current) {
