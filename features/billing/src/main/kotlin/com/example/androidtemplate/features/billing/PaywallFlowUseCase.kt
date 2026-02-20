@@ -26,8 +26,15 @@ class PaywallFlowUseCase(
 
     val nextResult = when (val outcome = billingStore.purchase(productId)) {
       is StorePurchaseOutcome.Success -> {
-        syncService.syncPurchase(outcome.purchase)
-        PaywallResult.Purchased(productId = outcome.purchase.productId)
+        val syncStatus = when (syncService.syncPurchase(outcome.purchase)) {
+          BillingSyncResult.Success,
+          BillingSyncResult.Skipped -> PaywallSyncStatus.Synced
+          is BillingSyncResult.Failure -> PaywallSyncStatus.SyncFailed
+        }
+        PaywallResult.Purchased(
+          productId = outcome.purchase.productId,
+          syncStatus = syncStatus,
+        )
       }
       StorePurchaseOutcome.Cancelled -> PaywallResult.Cancelled
       StorePurchaseOutcome.Pending -> PaywallResult.Pending
@@ -47,10 +54,18 @@ class PaywallFlowUseCase(
     val nextResult = if (restored.isEmpty()) {
       PaywallResult.Failed("No purchases found")
     } else {
+      var hasSyncFailure = false
       restored.forEach { purchase ->
-        syncService.syncPurchase(purchase)
+        when (syncService.syncPurchase(purchase)) {
+          BillingSyncResult.Success,
+          BillingSyncResult.Skipped -> Unit
+          is BillingSyncResult.Failure -> hasSyncFailure = true
+        }
       }
-      PaywallResult.Restored(count = restored.size)
+      PaywallResult.Restored(
+        count = restored.size,
+        syncStatus = if (hasSyncFailure) PaywallSyncStatus.SyncFailed else PaywallSyncStatus.Synced,
+      )
     }
 
     state = currentReadyState.copy(lastResult = nextResult)
@@ -111,9 +126,20 @@ sealed interface BillingOperation {
 }
 
 sealed interface PaywallResult {
-  data class Purchased(val productId: String) : PaywallResult
-  data class Restored(val count: Int) : PaywallResult
+  data class Purchased(
+    val productId: String,
+    val syncStatus: PaywallSyncStatus,
+  ) : PaywallResult
+  data class Restored(
+    val count: Int,
+    val syncStatus: PaywallSyncStatus,
+  ) : PaywallResult
   data object Cancelled : PaywallResult
   data object Pending : PaywallResult
   data class Failed(val message: String) : PaywallResult
+}
+
+enum class PaywallSyncStatus {
+  Synced,
+  SyncFailed,
 }

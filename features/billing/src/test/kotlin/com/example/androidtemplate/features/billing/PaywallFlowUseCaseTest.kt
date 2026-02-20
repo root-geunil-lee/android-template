@@ -77,7 +77,46 @@ class PaywallFlowUseCaseTest {
 
     assertThat(fakeSync.syncedPurchasesCount).isEqualTo(1)
     val ready = state as PaywallState.Ready
-    assertThat(ready.lastResult).isEqualTo(PaywallResult.Purchased(productId = "monthly"))
+    assertThat(ready.lastResult).isEqualTo(
+      PaywallResult.Purchased(
+        productId = "monthly",
+        syncStatus = PaywallSyncStatus.Synced,
+      ),
+    )
+  }
+
+  @Test
+  fun purchase_successWithSyncFailure_mapsToPurchasedSyncFailed() = runBlocking {
+    val fakeSync = FakeBillingSyncService(
+      syncResult = BillingSyncResult.Failure(500),
+    )
+    val fakeStore = FakeBillingStore(
+      purchaseOutcome = StorePurchaseOutcome.Success(
+        StorePurchase(
+          productId = "monthly",
+          purchaseToken = "token-1",
+          orderId = "order-1",
+          purchaseState = StorePurchaseState.PURCHASED,
+        ),
+      ),
+    )
+
+    val useCase = PaywallFlowUseCase(
+      billingStore = fakeStore,
+      syncService = fakeSync,
+    )
+
+    useCase.loadProducts()
+    val state = useCase.purchase("monthly")
+
+    assertThat(fakeSync.syncedPurchasesCount).isEqualTo(1)
+    val ready = state as PaywallState.Ready
+    assertThat(ready.lastResult).isEqualTo(
+      PaywallResult.Purchased(
+        productId = "monthly",
+        syncStatus = PaywallSyncStatus.SyncFailed,
+      ),
+    )
   }
 
   @Test
@@ -110,15 +149,56 @@ class PaywallFlowUseCaseTest {
 
     assertThat(fakeSync.syncedPurchasesCount).isEqualTo(2)
     val ready = state as PaywallState.Ready
-    assertThat(ready.lastResult).isEqualTo(PaywallResult.Restored(count = 2))
+    assertThat(ready.lastResult).isEqualTo(
+      PaywallResult.Restored(
+        count = 2,
+        syncStatus = PaywallSyncStatus.Synced,
+      ),
+    )
   }
 
-  private class FakeBillingSyncService : BillingSyncContract {
+  @Test
+  fun restore_whenAnySyncFails_mapsToRestoredSyncFailed() = runBlocking {
+    val fakeSync = FakeBillingSyncService(
+      syncResult = BillingSyncResult.Failure(500),
+    )
+    val fakeStore = FakeBillingStore(
+      restorePurchases = listOf(
+        StorePurchase(
+          productId = "monthly",
+          purchaseToken = "token-1",
+          orderId = "order-1",
+          purchaseState = StorePurchaseState.PURCHASED,
+        ),
+      ),
+    )
+
+    val useCase = PaywallFlowUseCase(
+      billingStore = fakeStore,
+      syncService = fakeSync,
+    )
+
+    useCase.loadProducts()
+    val state = useCase.restorePurchases()
+
+    assertThat(fakeSync.syncedPurchasesCount).isEqualTo(1)
+    val ready = state as PaywallState.Ready
+    assertThat(ready.lastResult).isEqualTo(
+      PaywallResult.Restored(
+        count = 1,
+        syncStatus = PaywallSyncStatus.SyncFailed,
+      ),
+    )
+  }
+
+  private class FakeBillingSyncService(
+    private val syncResult: BillingSyncResult = BillingSyncResult.Success,
+  ) : BillingSyncContract {
     var syncedPurchasesCount: Int = 0
 
     override suspend fun syncPurchase(purchase: StorePurchase): BillingSyncResult {
       syncedPurchasesCount += 1
-      return BillingSyncResult.Success
+      return syncResult
     }
   }
 
