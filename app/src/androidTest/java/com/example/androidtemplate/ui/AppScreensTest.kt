@@ -1,6 +1,7 @@
 package com.example.androidtemplate.ui
 
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -18,6 +19,7 @@ import com.example.androidtemplate.features.mypage.MyPageScreen
 import com.example.androidtemplate.features.mypage.SubscriptionScreen
 import org.junit.Rule
 import org.junit.Test
+import androidx.compose.ui.unit.dp
 
 class AppScreensTest {
 
@@ -100,6 +102,24 @@ class AppScreensTest {
     composeRule.onNodeWithText("Purchase History").assertIsDisplayed()
     composeRule.onNodeWithText("Log out").assertIsDisplayed()
     composeRule.onNodeWithText("Delete Account").assertIsDisplayed()
+  }
+
+  @Test
+  fun myPageScreen_rowsMeetMinimumTouchTargetHeight() {
+    composeRule.setContent {
+      MyPageScreen(
+        onEditProfile = {},
+        onSubscription = {},
+        onPurchaseHistory = {},
+        onTerms = {},
+        onPrivacy = {},
+        onLogout = {},
+        onDeleteAccount = {},
+      )
+    }
+
+    composeRule.onNodeWithTag("row_item_Subscription").assertHeightIsAtLeast(48.dp)
+    composeRule.onNodeWithTag("row_item_Delete_Account").assertHeightIsAtLeast(48.dp)
   }
 
   @Test
