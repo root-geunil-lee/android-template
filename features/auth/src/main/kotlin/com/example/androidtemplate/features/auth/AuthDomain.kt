@@ -6,10 +6,53 @@ sealed interface AuthResult {
   data class Failure(val message: String) : AuthResult
 }
 
+enum class OAuthProvider(val providerKey: String) {
+  Apple("apple"),
+  Google("google"),
+  Kakao("kakao"),
+}
+
 interface AuthRepositoryContract {
+  fun buildOAuthAuthorizeUrl(provider: OAuthProvider): String? = null
+  suspend fun completeOAuthCallback(callbackUri: String): AuthResult = AuthResult.Failure("OAuth not configured")
   suspend fun requestOtp(email: String): AuthResult
   suspend fun verifyOtp(email: String, code: String): AuthResult
   suspend fun logout(): AuthResult
+}
+
+sealed interface OAuthFlowState {
+  data object Idle : OAuthFlowState
+  data class LaunchBrowser(val url: String) : OAuthFlowState
+  data object HandlingCallback : OAuthFlowState
+  data object Authenticated : OAuthFlowState
+  data class Error(val message: String) : OAuthFlowState
+}
+
+class OAuthUseCase(
+  private val repository: AuthRepositoryContract,
+) {
+  var state: OAuthFlowState = OAuthFlowState.Idle
+    private set
+
+  fun start(provider: OAuthProvider): OAuthFlowState {
+    val url = repository.buildOAuthAuthorizeUrl(provider)
+    state = if (url.isNullOrBlank()) {
+      OAuthFlowState.Error("Missing OAuth configuration")
+    } else {
+      OAuthFlowState.LaunchBrowser(url)
+    }
+    return state
+  }
+
+  suspend fun handleCallback(callbackUri: String): OAuthFlowState {
+    state = OAuthFlowState.HandlingCallback
+    state = when (val result = repository.completeOAuthCallback(callbackUri)) {
+      AuthResult.Success -> OAuthFlowState.Authenticated
+      is AuthResult.RateLimited -> OAuthFlowState.Error("Too many requests. Retry in ${result.retryAfterSeconds}s")
+      is AuthResult.Failure -> OAuthFlowState.Error(result.message)
+    }
+    return state
+  }
 }
 
 sealed interface OtpFlowState {

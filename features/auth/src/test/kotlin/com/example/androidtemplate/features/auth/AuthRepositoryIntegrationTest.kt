@@ -33,6 +33,7 @@ class AuthRepositoryIntegrationTest {
 
     val repository = AuthRepository(
       baseUrl = server.url("/").toString(),
+      redirectUrl = "androidtemplate://auth/callback",
       sessionStore = InMemorySessionStore(),
     )
 
@@ -59,6 +60,7 @@ class AuthRepositoryIntegrationTest {
     val sessionStore = InMemorySessionStore()
     val repository = AuthRepository(
       baseUrl = server.url("/").toString(),
+      redirectUrl = "androidtemplate://auth/callback",
       sessionStore = sessionStore,
     )
 
@@ -83,6 +85,7 @@ class AuthRepositoryIntegrationTest {
 
     val repository = AuthRepository(
       baseUrl = server.url("/").toString(),
+      redirectUrl = "androidtemplate://auth/callback",
       sessionStore = sessionStore,
     )
 
@@ -96,6 +99,41 @@ class AuthRepositoryIntegrationTest {
     val nonNullRequest = request!!
     assertThat(nonNullRequest.path).isEqualTo(AndroidAuthContract.LOGOUT_ENDPOINT)
     assertThat(nonNullRequest.getHeader("Authorization")).isEqualTo("Bearer access-token")
+  }
+
+  @Test
+  fun buildOAuthAuthorizeUrl_containsProviderAndRedirect() {
+    val repository = AuthRepository(
+      baseUrl = "https://example.supabase.co",
+      redirectUrl = "androidtemplate://auth/callback",
+      sessionStore = InMemorySessionStore(),
+    )
+
+    val url = repository.buildOAuthAuthorizeUrl(OAuthProvider.Google)
+
+    assertThat(url).isEqualTo(
+      "https://example.supabase.co/auth/v1/authorize" +
+        "?provider=google" +
+        "&redirect_to=androidtemplate%3A%2F%2Fauth%2Fcallback" +
+        "&response_type=token",
+    )
+  }
+
+  @Test
+  fun completeOAuthCallback_extractsAccessTokenAndStoresSession() = runBlocking {
+    val sessionStore = InMemorySessionStore()
+    val repository = AuthRepository(
+      baseUrl = "https://example.supabase.co",
+      redirectUrl = "androidtemplate://auth/callback",
+      sessionStore = sessionStore,
+    )
+
+    val result = repository.completeOAuthCallback(
+      "androidtemplate://auth/callback#access_token=oauth-token",
+    )
+
+    assertThat(result).isEqualTo(AuthResult.Success)
+    assertThat(sessionStore.savedAccessToken).isEqualTo("oauth-token")
   }
 
   private class InMemorySessionStore(private var token: String? = null) : SessionStore {

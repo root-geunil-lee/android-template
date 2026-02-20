@@ -16,5 +16,9 @@ class ConfigurableAuthRepository(
 
   override suspend fun verifyOtp(email: String, code: String): AuthResult = delegate.verifyOtp(email, code)
 
+  override fun buildOAuthAuthorizeUrl(provider: OAuthProvider): String? = delegate.buildOAuthAuthorizeUrl(provider)
+
+  override suspend fun completeOAuthCallback(callbackUri: String): AuthResult = delegate.completeOAuthCallback(callbackUri)
+
   override suspend fun logout(): AuthResult = delegate.logout()
 }
