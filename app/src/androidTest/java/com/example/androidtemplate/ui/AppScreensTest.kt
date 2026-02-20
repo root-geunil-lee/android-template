@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -66,6 +67,42 @@ class AppScreensTest {
 
     composeRule.onNodeWithTag("auth_methods_scroll").performScrollToNode(hasText("Continue with Email"))
     composeRule.onNodeWithText("Continue with Email").assertIsDisplayed()
+  }
+
+  @Test
+  fun authMethodsScreen_providerButtonsFollowRequiredOrderAndTouchTarget() {
+    composeRule.setContent {
+      AuthMethodsScreen(
+        oauthState = OAuthFlowState.Idle,
+        onApple = {},
+        onGoogle = {},
+        onKakao = {},
+        onContinueWithEmail = {},
+      )
+    }
+
+    composeRule.onNodeWithTag("auth_provider_0_google").assertIsDisplayed().assertHeightIsAtLeast(56.dp)
+    composeRule.onNodeWithTag("auth_provider_1_apple").assertIsDisplayed().assertHeightIsAtLeast(56.dp)
+    composeRule.onNodeWithTag("auth_provider_2_kakao").assertIsDisplayed().assertHeightIsAtLeast(56.dp)
+    composeRule.onNodeWithTag("auth_provider_3_email").assertIsDisplayed().assertHeightIsAtLeast(56.dp)
+  }
+
+  @Test
+  fun authMethodsScreen_handlingCallbackDisablesProviderActions() {
+    composeRule.setContent {
+      AuthMethodsScreen(
+        oauthState = OAuthFlowState.HandlingCallback,
+        onApple = {},
+        onGoogle = {},
+        onKakao = {},
+        onContinueWithEmail = {},
+      )
+    }
+
+    composeRule.onNodeWithTag("auth_provider_0_google").assertIsNotEnabled()
+    composeRule.onNodeWithTag("auth_provider_1_apple").assertIsNotEnabled()
+    composeRule.onNodeWithTag("auth_provider_2_kakao").assertIsNotEnabled()
+    composeRule.onNodeWithTag("auth_provider_3_email").assertIsNotEnabled()
   }
 
   @Test

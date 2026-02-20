@@ -3,12 +3,20 @@ package com.example.androidtemplate.features.auth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
@@ -18,9 +26,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -59,11 +71,14 @@ fun AuthMethodsScreen(
   Column(
     modifier = Modifier
       .fillMaxSize()
+      .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))
       .verticalScroll(rememberScrollState())
+      // Auth graph host already applies status bar insets; keep +32dp breathing room per spec.
+      .padding(top = 32.dp)
       .testTag("auth_methods_scroll"),
-    verticalArrangement = Arrangement.Center,
+    verticalArrangement = Arrangement.Top,
   ) {
-    Text("Sign in", style = MaterialTheme.typography.headlineMedium)
+    Text("Sign in", style = MaterialTheme.typography.displayLarge)
     if (!oauthMessage.isNullOrBlank()) {
       Spacer(Modifier.height(8.dp))
       Text(
@@ -72,13 +87,139 @@ fun AuthMethodsScreen(
       )
     }
     Spacer(Modifier.height(24.dp))
-    Button(onClick = onApple, enabled = !isBusy, modifier = Modifier.fillMaxWidth()) { Text("Continue with Apple") }
-    Spacer(Modifier.height(12.dp))
-    Button(onClick = onGoogle, enabled = !isBusy, modifier = Modifier.fillMaxWidth()) { Text("Continue with Google") }
-    Spacer(Modifier.height(12.dp))
-    Button(onClick = onKakao, enabled = !isBusy, modifier = Modifier.fillMaxWidth()) { Text("Continue with Kakao") }
-    Spacer(Modifier.height(12.dp))
-    Button(onClick = onContinueWithEmail, enabled = !isBusy, modifier = Modifier.fillMaxWidth()) { Text("Continue with Email") }
+    // Keep iOS parity for copy/entry points while using Android-native M3 hierarchy.
+    // Google is the single primary action, Apple is secondary outline, Kakao is tertiary tonal,
+    // and Email stays lightweight as text action.
+    Column(
+      verticalArrangement = Arrangement.spacedBy(16.dp),
+      modifier = Modifier.fillMaxWidth(),
+    ) {
+      Button(
+        onClick = onGoogle,
+        enabled = !isBusy,
+        shape = RoundedCornerShape(24.dp),
+        colors = ButtonDefaults.buttonColors(
+          containerColor = MaterialTheme.colorScheme.primary,
+          contentColor = MaterialTheme.colorScheme.onPrimary,
+          disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+          disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+        modifier = Modifier
+          .fillMaxWidth()
+          .heightIn(min = 56.dp)
+          .testTag("auth_provider_0_google"),
+      ) {
+        AuthProviderLabel(
+          badge = "G",
+          text = "Continue with Google",
+          badgeContainerColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f),
+          badgeContentColor = MaterialTheme.colorScheme.onPrimary,
+        )
+      }
+
+      OutlinedButton(
+        onClick = onApple,
+        enabled = !isBusy,
+        shape = RoundedCornerShape(24.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        colors = ButtonDefaults.outlinedButtonColors(
+          contentColor = MaterialTheme.colorScheme.onSurface,
+          disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+        modifier = Modifier
+          .fillMaxWidth()
+          .heightIn(min = 56.dp)
+          .testTag("auth_provider_1_apple"),
+      ) {
+        AuthProviderLabel(
+          badge = "A",
+          text = "Continue with Apple",
+          badgeContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+          badgeContentColor = MaterialTheme.colorScheme.onSurface,
+        )
+      }
+
+      FilledTonalButton(
+        onClick = onKakao,
+        enabled = !isBusy,
+        shape = RoundedCornerShape(24.dp),
+        colors = ButtonDefaults.filledTonalButtonColors(
+          containerColor = MaterialTheme.colorScheme.primaryContainer,
+          contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+          disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+          disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+        modifier = Modifier
+          .fillMaxWidth()
+          .heightIn(min = 56.dp)
+          .testTag("auth_provider_2_kakao"),
+      ) {
+        AuthProviderLabel(
+          badge = "K",
+          text = "Continue with Kakao",
+          badgeContainerColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.14f),
+          badgeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
+      }
+
+      TextButton(
+        onClick = onContinueWithEmail,
+        enabled = !isBusy,
+        shape = RoundedCornerShape(24.dp),
+        colors = ButtonDefaults.textButtonColors(
+          contentColor = MaterialTheme.colorScheme.primary,
+          disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+        modifier = Modifier
+          .fillMaxWidth()
+          .heightIn(min = 56.dp)
+          .testTag("auth_provider_3_email"),
+      ) {
+        AuthProviderLabel(
+          badge = "@",
+          text = "Continue with Email",
+          badgeContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+          badgeContentColor = MaterialTheme.colorScheme.primary,
+        )
+      }
+    }
+  }
+}
+
+@Composable
+private fun AuthProviderLabel(
+  badge: String,
+  text: String,
+  badgeContainerColor: androidx.compose.ui.graphics.Color,
+  badgeContentColor: androidx.compose.ui.graphics.Color,
+) {
+  Row(
+    modifier = Modifier.fillMaxWidth(),
+    horizontalArrangement = Arrangement.spacedBy(12.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Box(
+      modifier = Modifier
+        .size(24.dp)
+        .background(color = badgeContainerColor, shape = RoundedCornerShape(12.dp)),
+      contentAlignment = Alignment.Center,
+    ) {
+      Text(
+        text = badge,
+        color = badgeContentColor,
+        style = MaterialTheme.typography.labelSmall,
+      )
+    }
+    Text(
+      text = text,
+      style = MaterialTheme.typography.bodyLarge,
+      modifier = Modifier.weight(1f),
+      textAlign = TextAlign.Start,
+    )
   }
 }
 
