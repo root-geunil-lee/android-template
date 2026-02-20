@@ -101,8 +101,15 @@ private fun UnauthenticatedApp(
   LaunchedEffect(authRepository) {
     AuthCallbackBus.callbacks.collect { callbackUri ->
       oauthFlowState = oauthUseCase.handleCallback(callbackUri)
-      if (oauthFlowState == OAuthFlowState.Authenticated) {
-        onAuthenticated()
+      when (oauthFlowState) {
+        OAuthFlowState.Authenticated -> onAuthenticated()
+        is OAuthFlowState.Error -> {
+          navController.navigate(AppRoutes.AUTH_METHODS) {
+            popUpTo(AppRoutes.AUTH_METHODS) { inclusive = false }
+            launchSingleTop = true
+          }
+        }
+        else -> Unit
       }
     }
   }
