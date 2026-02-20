@@ -1,5 +1,6 @@
 package com.example.androidtemplate
 
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -20,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -32,13 +34,17 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.androidtemplate.core.navigation.AppRoutes
 import com.example.androidtemplate.features.auth.AuthMethodsScreen
+import com.example.androidtemplate.features.auth.DemoAuthRepository
 import com.example.androidtemplate.features.auth.EmailSignInScreen
+import com.example.androidtemplate.features.auth.OtpAuthUseCase
+import com.example.androidtemplate.features.auth.OtpFlowState
 import com.example.androidtemplate.features.auth.OtpVerifyScreen
 import com.example.androidtemplate.features.billing.PaywallSheetRoute
 import com.example.androidtemplate.features.home.HomeScreen
 import com.example.androidtemplate.features.mypage.MyPageRoute
 import com.example.androidtemplate.features.mypage.PurchaseHistoryScreen
 import com.example.androidtemplate.features.mypage.SubscriptionScreen
+import kotlinx.coroutines.launch
 
 @Composable
 fun AndroidTemplateApp() {
@@ -53,6 +59,9 @@ fun AndroidTemplateApp() {
 @Composable
 private fun UnauthenticatedApp(onAuthenticated: () -> Unit) {
   val navController = rememberNavController()
+  val coroutineScope = rememberCoroutineScope()
+  val otpAuthUseCase = remember { OtpAuthUseCase(DemoAuthRepository()) }
+  var otpFlowState by remember { mutableStateOf<OtpFlowState>(OtpFlowState.Idle) }
 
   NavHost(
     navController = navController,
@@ -63,15 +72,24 @@ private fun UnauthenticatedApp(onAuthenticated: () -> Unit) {
         onApple = onAuthenticated,
         onGoogle = onAuthenticated,
         onKakao = onAuthenticated,
-        onContinueWithEmail = { navController.navigate(AppRoutes.AUTH_EMAIL) },
+        onContinueWithEmail = {
+          otpFlowState = OtpFlowState.Idle
+          navController.navigate(AppRoutes.AUTH_EMAIL)
+        },
       )
     }
 
     composable(AppRoutes.AUTH_EMAIL) {
       EmailSignInScreen(
+        state = otpFlowState,
         onBack = { navController.popBackStack() },
         onSendCode = { email ->
-          navController.navigate("auth/otp?email=$email")
+          coroutineScope.launch {
+            otpFlowState = otpAuthUseCase.sendCode(email)
+            if (otpFlowState is OtpFlowState.SentCode) {
+              navController.navigate("auth/otp?email=${Uri.encode(email)}")
+            }
+          }
         },
       )
     }
@@ -83,8 +101,16 @@ private fun UnauthenticatedApp(onAuthenticated: () -> Unit) {
       val email = backStackEntry.arguments?.getString("email").orEmpty()
       OtpVerifyScreen(
         email = email,
+        state = otpFlowState,
         onBack = { navController.popBackStack() },
-        onVerified = onAuthenticated,
+        onVerifyCode = { code ->
+          coroutineScope.launch {
+            otpFlowState = otpAuthUseCase.verifyCode(email = email, code = code)
+            if (otpFlowState == OtpFlowState.VerifiedSuccess) {
+              onAuthenticated()
+            }
+          }
+        },
       )
     }
   }

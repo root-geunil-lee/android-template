@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
 
 @Composable
 fun AuthMethodsScreen(
@@ -48,11 +47,18 @@ fun AuthMethodsScreen(
 
 @Composable
 fun EmailSignInScreen(
+  state: OtpFlowState,
   onBack: () -> Unit,
   onSendCode: (String) -> Unit,
 ) {
   var email by rememberSaveable { mutableStateOf("") }
   val isValid = email.contains("@") && email.contains(".")
+
+  val backendMessage = when (state) {
+    is OtpFlowState.Error -> state.message
+    is OtpFlowState.RateLimited -> "Too many requests. Try again in ${state.retryAfterSeconds}s"
+    else -> null
+  }
 
   Column(
     modifier = Modifier.fillMaxSize(),
@@ -68,10 +74,11 @@ fun EmailSignInScreen(
         .fillMaxWidth()
         .testTag("email_input"),
       keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-      isError = email.isNotEmpty() && !isValid,
+      isError = (email.isNotEmpty() && !isValid) || backendMessage != null,
       supportingText = {
-        if (email.isNotEmpty() && !isValid) {
-          Text("Please enter a valid email")
+        when {
+          email.isNotEmpty() && !isValid -> Text("Please enter a valid email")
+          backendMessage != null -> Text(backendMessage)
         }
       },
     )
@@ -79,10 +86,10 @@ fun EmailSignInScreen(
     Spacer(Modifier.height(12.dp))
     Button(
       onClick = { onSendCode(email) },
-      enabled = isValid,
+      enabled = isValid && state != OtpFlowState.SendingCode,
       modifier = Modifier.fillMaxWidth(),
     ) {
-      Text("Send verification code")
+      Text(if (state == OtpFlowState.SendingCode) "Sending..." else "Send verification code")
     }
 
     Spacer(Modifier.height(8.dp))
@@ -93,15 +100,23 @@ fun EmailSignInScreen(
 @Composable
 fun OtpVerifyScreen(
   email: String,
+  state: OtpFlowState,
   onBack: () -> Unit,
-  onVerified: () -> Unit,
+  onVerifyCode: (String) -> Unit,
 ) {
   var otp by rememberSaveable { mutableStateOf("") }
+  var lastAutoSubmittedCode by rememberSaveable { mutableStateOf("") }
 
-  LaunchedEffect(otp) {
-    if (otp.length == 6) {
-      delay(300)
-      onVerified()
+  val backendMessage = when (state) {
+    is OtpFlowState.Error -> state.message
+    is OtpFlowState.RateLimited -> "Too many attempts. Try again in ${state.retryAfterSeconds}s"
+    else -> null
+  }
+
+  LaunchedEffect(otp, state) {
+    if (otp.length == 6 && otp != lastAutoSubmittedCode && state != OtpFlowState.VerifyingCode) {
+      lastAutoSubmittedCode = otp
+      onVerifyCode(otp)
     }
   }
 
@@ -120,12 +135,23 @@ fun OtpVerifyScreen(
       label = { Text("6-digit code") },
       modifier = Modifier.fillMaxWidth(),
       keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-      supportingText = { Text("Auto-verify triggers at 6 digits") },
+      isError = backendMessage != null,
+      supportingText = {
+        if (backendMessage != null) {
+          Text(backendMessage)
+        } else {
+          Text("Auto-verify triggers at 6 digits")
+        }
+      },
     )
 
     Spacer(Modifier.height(12.dp))
-    Button(onClick = onVerified, enabled = otp.length == 6, modifier = Modifier.fillMaxWidth()) {
-      Text("Verify")
+    Button(
+      onClick = { onVerifyCode(otp) },
+      enabled = otp.length == 6 && state != OtpFlowState.VerifyingCode,
+      modifier = Modifier.fillMaxWidth(),
+    ) {
+      Text(if (state == OtpFlowState.VerifyingCode) "Verifying..." else "Verify")
     }
 
     Spacer(Modifier.height(8.dp))

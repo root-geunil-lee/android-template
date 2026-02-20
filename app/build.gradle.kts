@@ -52,6 +52,7 @@ dependencies {
   implementation(project(":core:contracts"))
   implementation(project(":core:navigation"))
   implementation(project(":core:ui"))
+  implementation(project(":features:auth"))
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.lifecycle.runtime.ktx)
