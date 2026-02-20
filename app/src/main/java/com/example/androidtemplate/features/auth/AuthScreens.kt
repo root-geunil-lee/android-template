@@ -1,5 +1,8 @@
 package com.example.androidtemplate.features.auth
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,30 +22,23 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.background
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -60,14 +56,18 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.androidtemplate.ui.theme.IosPalette
 import kotlinx.coroutines.delay
 
 @Composable
@@ -77,22 +77,17 @@ fun AuthMethodsScreen(
   onGoogle: () -> Unit,
   onKakao: () -> Unit,
   onContinueWithEmail: () -> Unit,
+  onViewPlans: () -> Unit,
 ) {
+  val isBusy = oauthState == OAuthFlowState.HandlingCallback
   val oauthMessage = when (oauthState) {
     is OAuthFlowState.Error -> oauthState.message
     OAuthFlowState.HandlingCallback -> "Signing in..."
     else -> null
   }
-  val isBusy = oauthState == OAuthFlowState.HandlingCallback
 
   Scaffold(
-    topBar = {
-      AuthFlowTopBar(
-        title = "Sign in",
-        onBack = null,
-      )
-    },
-    containerColor = MaterialTheme.colorScheme.background,
+    containerColor = IosPalette.SystemGroupedBackground,
   ) { innerPadding ->
     Column(
       modifier = Modifier
@@ -100,206 +95,283 @@ fun AuthMethodsScreen(
         .padding(innerPadding)
         .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))
         .verticalScroll(rememberScrollState())
-        .padding(top = 24.dp)
+        .padding(horizontal = 20.dp)
         .testTag("auth_methods_scroll"),
       verticalArrangement = Arrangement.Top,
+      horizontalAlignment = Alignment.Start,
     ) {
-      if (!oauthMessage.isNullOrBlank()) {
-        Text(
-          text = oauthMessage,
-          color = MaterialTheme.colorScheme.error,
-        )
-        Spacer(Modifier.height(8.dp))
-      }
-      // Keep iOS parity for copy/entry points while using Android-native M3 hierarchy.
-      // Google is the single primary action, Apple is secondary outline, Kakao is tertiary tonal,
-      // and Email stays lightweight as text action.
-      Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = Modifier.fillMaxWidth(),
-      ) {
-        Button(
-          onClick = onGoogle,
-          enabled = !isBusy,
-          shape = RoundedCornerShape(24.dp),
-          elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = 1.dp,
-            pressedElevation = 1.dp,
-            focusedElevation = 1.dp,
-            hoveredElevation = 1.dp,
-            disabledElevation = 0.dp,
-          ),
-          colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
-            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-          ),
-          contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-          modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .semantics { contentDescription = "Continue with Google" }
-            .testTag("auth_provider_0_google"),
-        ) {
-          AuthProviderLabel(
-            badge = "G",
-            text = "Continue with Google",
-            badgeContainerColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f),
-            badgeContentColor = MaterialTheme.colorScheme.onPrimary,
-          )
-        }
+      Spacer(Modifier.height(80.dp))
+      Text(
+        text = "Sign in",
+        style = TextStyle(fontSize = 34.sp, fontWeight = FontWeight.SemiBold),
+        color = IosPalette.Label,
+      )
+      Spacer(Modifier.height(40.dp))
 
-        OutlinedButton(
+      // iOS-first layout with Android exception: Google remains the first entry point.
+      PrimaryProviderAction(
+        text = "Continue with Google",
+        monogram = "G",
+        enabled = !isBusy,
+        tag = "auth_provider_0_google",
+        onClick = onGoogle,
+      )
+
+      Spacer(Modifier.height(12.dp))
+
+      ProviderRowsContainer(
+        first = ProviderRowSpec(
+          text = "Sign in with Apple",
+          monogram = "A",
+          tag = "auth_provider_1_apple",
           onClick = onApple,
           enabled = !isBusy,
-          shape = RoundedCornerShape(24.dp),
-          border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-          elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = 0.dp,
-            pressedElevation = 0.dp,
-            focusedElevation = 0.dp,
-            hoveredElevation = 0.dp,
-            disabledElevation = 0.dp,
-          ),
-          colors = ButtonDefaults.outlinedButtonColors(
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-          ),
-          contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-          modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .semantics { contentDescription = "Continue with Apple" }
-            .testTag("auth_provider_1_apple"),
-        ) {
-          AuthProviderLabel(
-            badge = "A",
-            text = "Continue with Apple",
-            badgeContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-            badgeContentColor = MaterialTheme.colorScheme.onSurface,
-          )
-        }
-
-        FilledTonalButton(
+        ),
+        second = ProviderRowSpec(
+          text = "Continue with Kakao",
+          monogram = "K",
+          tag = "auth_provider_2_kakao",
           onClick = onKakao,
           enabled = !isBusy,
-          shape = RoundedCornerShape(24.dp),
-          elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = 0.dp,
-            pressedElevation = 0.dp,
-            focusedElevation = 0.dp,
-            hoveredElevation = 0.dp,
-            disabledElevation = 0.dp,
-          ),
-          colors = ButtonDefaults.filledTonalButtonColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-          ),
-          contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-          modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .semantics { contentDescription = "Continue with Kakao" }
-            .testTag("auth_provider_2_kakao"),
-        ) {
-          AuthProviderLabel(
-            badge = "K",
-            text = "Continue with Kakao",
-            badgeContainerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
-            badgeContentColor = MaterialTheme.colorScheme.onSurface,
-          )
-        }
+        ),
+      )
 
-        TextButton(
-          onClick = onContinueWithEmail,
-          enabled = !isBusy,
-          shape = RoundedCornerShape(24.dp),
-          elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = 0.dp,
-            pressedElevation = 0.dp,
-            focusedElevation = 0.dp,
-            hoveredElevation = 0.dp,
-            disabledElevation = 0.dp,
-          ),
-          colors = ButtonDefaults.textButtonColors(
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-          ),
-          contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-          modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .semantics { contentDescription = "Continue with Email" }
-            .testTag("auth_provider_3_email"),
-        ) {
-          AuthProviderLabel(
-            badge = "@",
-            text = "Continue with Email",
-            badgeContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-            badgeContentColor = MaterialTheme.colorScheme.onSurface,
-          )
-        }
+      Spacer(Modifier.height(20.dp))
+      OrDivider()
+      Spacer(Modifier.height(20.dp))
+
+      TextButton(
+        onClick = onContinueWithEmail,
+        enabled = !isBusy,
+        colors = ButtonDefaults.textButtonColors(
+          contentColor = IosPalette.SystemBlue,
+          disabledContentColor = IosPalette.SecondaryLabel,
+        ),
+        contentPadding = PaddingValues(0.dp),
+        modifier = Modifier
+          .fillMaxWidth()
+          .heightIn(min = 44.dp)
+          .semantics { contentDescription = "Continue with Email" }
+          .testTag("auth_provider_3_email"),
+      ) {
+        Text(
+          text = "Continue with Email \u2192",
+          style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Medium),
+          modifier = Modifier.fillMaxWidth(),
+          textAlign = TextAlign.Start,
+        )
       }
+
+      TextButton(
+        onClick = onViewPlans,
+        enabled = !isBusy,
+        colors = ButtonDefaults.textButtonColors(
+          contentColor = IosPalette.SecondaryLabel,
+          disabledContentColor = IosPalette.SecondaryLabel.copy(alpha = 0.6f),
+        ),
+        contentPadding = PaddingValues(0.dp),
+        modifier = Modifier
+          .heightIn(min = 36.dp)
+          .semantics { contentDescription = "View plans" },
+      ) {
+        Text(
+          text = "View plans",
+          style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Normal),
+          modifier = Modifier.fillMaxWidth(),
+          textAlign = TextAlign.Start,
+        )
+      }
+
+      if (!oauthMessage.isNullOrBlank()) {
+        Spacer(Modifier.height(16.dp))
+        Text(
+          text = oauthMessage,
+          style = TextStyle(fontSize = 13.sp),
+          color = IosPalette.SecondaryLabel,
+          modifier = Modifier.fillMaxWidth(),
+        )
+      }
+
+      Spacer(Modifier.height(24.dp))
     }
   }
 }
 
+private data class ProviderRowSpec(
+  val text: String,
+  val monogram: String,
+  val tag: String,
+  val enabled: Boolean,
+  val onClick: () -> Unit,
+)
+
 @Composable
-private fun AuthProviderLabel(
-  badge: String,
+private fun PrimaryProviderAction(
   text: String,
-  badgeContainerColor: androidx.compose.ui.graphics.Color,
-  badgeContentColor: androidx.compose.ui.graphics.Color,
+  monogram: String,
+  enabled: Boolean,
+  tag: String,
+  onClick: () -> Unit,
 ) {
-  Row(
-    modifier = Modifier.fillMaxWidth(),
-    horizontalArrangement = Arrangement.spacedBy(12.dp),
-    verticalAlignment = Alignment.CenterVertically,
+  Button(
+    onClick = onClick,
+    enabled = enabled,
+    shape = RoundedCornerShape(15.dp),
+    colors = ButtonDefaults.buttonColors(
+      containerColor = Color.Black,
+      contentColor = Color.White,
+      disabledContainerColor = Color.Black.copy(alpha = 0.55f),
+      disabledContentColor = Color.White.copy(alpha = 0.65f),
+    ),
+    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+    modifier = Modifier
+      .fillMaxWidth()
+      .height(56.dp)
+      .semantics { contentDescription = text }
+      .testTag(tag),
   ) {
-    Box(
-      modifier = Modifier
-        .size(24.dp)
-        .background(color = badgeContainerColor, shape = RoundedCornerShape(12.dp)),
-      contentAlignment = Alignment.Center,
+    Row(
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+      Box(
+        modifier = Modifier
+          .size(22.dp)
+          .background(Color.White.copy(alpha = 0.18f), CircleShape),
+        contentAlignment = Alignment.Center,
+      ) {
+        Text(
+          text = monogram,
+          style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
+        )
+      }
       Text(
-        text = badge,
-        color = badgeContentColor,
-        style = MaterialTheme.typography.labelSmall,
+        text = text,
+        style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.SemiBold),
       )
     }
-    Text(
-      text = text,
-      style = MaterialTheme.typography.bodyLarge,
-      modifier = Modifier.weight(1f),
-      textAlign = TextAlign.Start,
-    )
   }
 }
 
 @Composable
-/*
-PR checklist:
-- [x] Copy parity checked
-- [x] Insets/edge-to-edge checked
-- [x] No dynamic color
-- [x] No bottom Back CTA
-- [x] OTP behaviors (paste, auto-advance, auto-verify) verified
-*/
+private fun ProviderRowsContainer(
+  first: ProviderRowSpec,
+  second: ProviderRowSpec,
+) {
+  Column(
+    modifier = Modifier
+      .fillMaxWidth()
+      .background(IosPalette.SecondarySystemGroupedBackground, RoundedCornerShape(14.dp))
+      .border(
+        width = 1.dp,
+        color = IosPalette.Separator.copy(alpha = 0.22f),
+        shape = RoundedCornerShape(14.dp),
+      ),
+  ) {
+    ProviderRowButton(row = first)
+    HairlineSeparator(modifier = Modifier.padding(start = 52.dp))
+    ProviderRowButton(row = second)
+  }
+}
+
+@Composable
+private fun ProviderRowButton(
+  row: ProviderRowSpec,
+) {
+  TextButton(
+    onClick = row.onClick,
+    enabled = row.enabled,
+    colors = ButtonDefaults.textButtonColors(
+      contentColor = IosPalette.Label,
+      disabledContentColor = IosPalette.SecondaryLabel,
+    ),
+    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+    modifier = Modifier
+      .fillMaxWidth()
+      .height(52.dp)
+      .semantics { contentDescription = row.text }
+      .testTag(row.tag),
+  ) {
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+      Box(
+        modifier = Modifier
+          .size(20.dp)
+          .background(IosPalette.TertiarySystemFill, CircleShape),
+        contentAlignment = Alignment.Center,
+      ) {
+        Text(
+          text = row.monogram,
+          style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
+          color = IosPalette.Label,
+        )
+      }
+
+      Text(
+        text = row.text,
+        style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Medium),
+        modifier = Modifier.weight(1f),
+        textAlign = TextAlign.Start,
+      )
+
+      Icon(
+        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+        contentDescription = null,
+        tint = IosPalette.TertiaryLabel,
+      )
+    }
+  }
+}
+
+@Composable
+private fun OrDivider() {
+  Row(
+    modifier = Modifier.fillMaxWidth(),
+    verticalAlignment = Alignment.CenterVertically,
+    horizontalArrangement = Arrangement.spacedBy(12.dp),
+  ) {
+    HairlineSeparator(modifier = Modifier.weight(1f))
+    Text(
+      text = "or",
+      style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Normal),
+      color = IosPalette.SecondaryLabel,
+    )
+    HairlineSeparator(modifier = Modifier.weight(1f))
+  }
+}
+
+@Composable
+private fun HairlineSeparator(modifier: Modifier = Modifier) {
+  Spacer(
+    modifier = modifier
+      .fillMaxWidth()
+      .height(1.dp)
+      .background(IosPalette.Separator.copy(alpha = 0.3f)),
+  )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun EmailSignInScreen(
   state: OtpFlowState,
   onBack: () -> Unit,
   onSendCode: (String) -> Unit,
 ) {
   var email by rememberSaveable { mutableStateOf("") }
-  val isValid = email.contains("@") && email.contains(".")
-  val isSending = state == OtpFlowState.SendingCode
+  var hasSubmitted by rememberSaveable { mutableStateOf(false) }
+  var didBlurInvalidEmail by rememberSaveable { mutableStateOf(false) }
+  var emailFieldFocused by rememberSaveable { mutableStateOf(false) }
 
-  val backendMessage = when (state) {
+  val normalizedEmail = email.trim().lowercase()
+  val isValidEmail = normalizedEmail.contains("@") && normalizedEmail.substringAfterLast('.', "").length >= 2
+  val isSending = state == OtpFlowState.SendingCode
+  val showEmailValidationError = normalizedEmail.isNotEmpty() && !isValidEmail && (hasSubmitted || didBlurInvalidEmail)
+  val isPrimaryDisabled = !isValidEmail || isSending
+
+  val helperMessage = when (state) {
     is OtpFlowState.Error -> state.message
     is OtpFlowState.RateLimited -> "Too many requests. Try again in ${state.retryAfterSeconds}s"
     else -> null
@@ -312,7 +384,7 @@ fun EmailSignInScreen(
         onBack = onBack,
       )
     },
-    containerColor = MaterialTheme.colorScheme.background,
+    containerColor = IosPalette.SystemGroupedBackground,
   ) { innerPadding ->
     Column(
       modifier = Modifier
@@ -320,93 +392,157 @@ fun EmailSignInScreen(
         .padding(innerPadding)
         .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))
         .verticalScroll(rememberScrollState())
-        .padding(top = 24.dp)
-        .testTag("email_sign_in_scroll"),
-      verticalArrangement = Arrangement.Top,
+        .padding(horizontal = 20.dp, vertical = 24.dp),
     ) {
       Text(
         text = "Enter your email to receive a one-time verification code.",
-        style = MaterialTheme.typography.bodyLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Normal),
+        color = IosPalette.SecondaryLabel,
       )
-      Spacer(Modifier.height(16.dp))
-      OutlinedTextField(
+      Spacer(Modifier.height(24.dp))
+
+      EmailField(
         value = email,
-        onValueChange = { email = it.trim() },
-        label = { Text("Email") },
-        placeholder = { Text("Email") },
-        shape = RoundedCornerShape(12.dp),
-        singleLine = true,
-        modifier = Modifier
-          .fillMaxWidth()
-          .testTag("email_input"),
-        keyboardOptions = KeyboardOptions(
-          keyboardType = KeyboardType.Email,
-          imeAction = ImeAction.Send,
-        ),
-        keyboardActions = KeyboardActions(
-          onSend = {
-            if (isValid && !isSending) {
-              onSendCode(email)
-            }
-          },
-        ),
-        isError = (email.isNotEmpty() && !isValid) || backendMessage != null,
-        colors = OutlinedTextFieldDefaults.colors(
-          focusedBorderColor = MaterialTheme.colorScheme.primary,
-          unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-          focusedLabelColor = MaterialTheme.colorScheme.onSurface,
-          unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-          focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-          unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        ),
-        supportingText = {
-          when {
-            email.isNotEmpty() && !isValid -> Text("Please enter a valid email")
-            backendMessage != null -> Text(backendMessage)
+        onValueChange = { email = it },
+        focused = emailFieldFocused,
+        onFocusChanged = { focused ->
+          if (emailFieldFocused && !focused && normalizedEmail.isNotEmpty() && !isValidEmail) {
+            didBlurInvalidEmail = true
           }
+          emailFieldFocused = focused
         },
+        onClear = { email = "" },
+        enabled = !isSending,
+        isError = showEmailValidationError,
       )
 
-      Spacer(Modifier.height(24.dp))
+      if (showEmailValidationError) {
+        Text(
+          text = "Enter a valid email address.",
+          style = TextStyle(fontSize = 13.sp),
+          color = IosPalette.SystemRed,
+          modifier = Modifier.padding(top = 8.dp, start = 20.dp),
+        )
+      }
+
       Button(
-        onClick = { onSendCode(email) },
-        enabled = isValid && !isSending,
-        shape = RoundedCornerShape(24.dp),
-        elevation = ButtonDefaults.buttonElevation(
-          defaultElevation = 1.dp,
-          pressedElevation = 1.dp,
-          focusedElevation = 1.dp,
-          hoveredElevation = 1.dp,
-          disabledElevation = 0.dp,
-        ),
+        onClick = {
+          hasSubmitted = true
+          if (isValidEmail && !isSending) {
+            onSendCode(normalizedEmail)
+          }
+        },
+        enabled = !isPrimaryDisabled,
+        shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.buttonColors(
-          containerColor = MaterialTheme.colorScheme.primary,
-          contentColor = MaterialTheme.colorScheme.onPrimary,
-          disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-          disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+          containerColor = Color.Black,
+          contentColor = Color.White,
+          disabledContainerColor = Color.Black.copy(alpha = 0.2f),
+          disabledContentColor = Color.White.copy(alpha = 0.62f),
         ),
         modifier = Modifier
           .fillMaxWidth()
-          .heightIn(min = 56.dp)
+          .padding(top = 24.dp)
+          .height(56.dp)
           .testTag("email_send_cta"),
       ) {
         if (isSending) {
           CircularProgressIndicator(
             modifier = Modifier.size(16.dp),
-            color = MaterialTheme.colorScheme.onPrimary,
+            color = Color.White,
             strokeWidth = 2.dp,
           )
           Spacer(Modifier.width(8.dp))
         }
         Text("Send verification code")
       }
+
+      if (!helperMessage.isNullOrBlank()) {
+        Text(
+          text = helperMessage,
+          style = TextStyle(fontSize = 13.sp),
+          color = IosPalette.SecondaryLabel,
+          modifier = Modifier.padding(top = 8.dp, start = 20.dp),
+        )
+      }
     }
   }
 }
 
 @Composable
+private fun EmailField(
+  value: String,
+  onValueChange: (String) -> Unit,
+  focused: Boolean,
+  onFocusChanged: (Boolean) -> Unit,
+  onClear: () -> Unit,
+  enabled: Boolean,
+  isError: Boolean,
+) {
+  Row(
+    modifier = Modifier
+      .fillMaxWidth()
+      .background(IosPalette.SecondarySystemGroupedBackground, RoundedCornerShape(14.dp))
+      .then(
+        if (isError) {
+          Modifier.border(1.5.dp, IosPalette.SystemRed.copy(alpha = 0.75f), RoundedCornerShape(14.dp))
+        } else {
+          Modifier
+        },
+      )
+      .padding(horizontal = 16.dp, vertical = 14.dp),
+    verticalAlignment = Alignment.CenterVertically,
+    horizontalArrangement = Arrangement.spacedBy(12.dp),
+  ) {
+    BasicTextField(
+      value = value,
+      onValueChange = onValueChange,
+      enabled = enabled,
+      singleLine = true,
+      textStyle = TextStyle(fontSize = 17.sp, color = IosPalette.Label),
+      keyboardOptions = KeyboardOptions(
+        keyboardType = KeyboardType.Email,
+        imeAction = ImeAction.Send,
+      ),
+      keyboardActions = KeyboardActions(
+        onSend = {},
+      ),
+      decorationBox = { innerField ->
+        Box {
+          if (value.isBlank()) {
+            Text(
+              text = "Email",
+              style = TextStyle(fontSize = 17.sp),
+              color = IosPalette.SecondaryLabel,
+            )
+          }
+          innerField()
+        }
+      },
+      modifier = Modifier
+        .weight(1f)
+        .onFocusChanged { onFocusChanged(it.isFocused) }
+        .testTag("email_input"),
+    )
+
+    if (focused && value.isNotBlank()) {
+      IconButton(
+        onClick = onClear,
+        modifier = Modifier.size(20.dp),
+      ) {
+        Icon(
+          imageVector = Icons.Filled.Close,
+          contentDescription = "Clear email",
+          tint = IosPalette.TertiaryLabel,
+          modifier = Modifier.size(18.dp),
+        )
+      }
+    }
+  }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun OtpVerifyScreen(
   email: String,
   state: OtpFlowState,
@@ -429,10 +565,7 @@ fun OtpVerifyScreen(
 
   LaunchedEffect(Unit) {
     repeat(5) {
-      val focused = runCatching {
-        focusRequester.requestFocus()
-      }.isSuccess
-      if (focused) {
+      if (runCatching { focusRequester.requestFocus() }.isSuccess) {
         return@LaunchedEffect
       }
       delay(16)
@@ -478,7 +611,7 @@ fun OtpVerifyScreen(
         onBack = onBack,
       )
     },
-    containerColor = MaterialTheme.colorScheme.background,
+    containerColor = IosPalette.SystemGroupedBackground,
   ) { innerPadding ->
     Column(
       modifier = Modifier
@@ -486,20 +619,20 @@ fun OtpVerifyScreen(
         .padding(innerPadding)
         .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))
         .verticalScroll(rememberScrollState())
-        .padding(top = 24.dp)
+        .padding(horizontal = 20.dp)
         .testTag("otp_verify_scroll"),
-      verticalArrangement = Arrangement.Top,
     ) {
+      Spacer(Modifier.height(34.dp))
       Text(
         text = "Enter verification code",
-        style = MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.SemiBold,
+        style = TextStyle(fontSize = 23.sp, fontWeight = FontWeight.SemiBold),
+        color = IosPalette.Label,
       )
-      Spacer(Modifier.height(8.dp))
+      Spacer(Modifier.height(9.dp))
       Text(
         text = "We sent a 6-digit code to $email",
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        style = MaterialTheme.typography.bodyMedium,
+        style = TextStyle(fontSize = 15.sp),
+        color = IosPalette.SecondaryLabel,
         modifier = Modifier.testTag("otp_subtext"),
       )
 
@@ -537,100 +670,106 @@ fun OtpVerifyScreen(
         isInputEnabled = !isVerifying,
         isInputFocused = otpFieldHasFocus,
       )
+
       Spacer(Modifier.height(8.dp))
       Text(
         text = "Code expires in 10 minutes.",
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        style = MaterialTheme.typography.bodyMedium,
+        style = TextStyle(fontSize = 15.sp),
+        color = IosPalette.SecondaryLabel,
       )
 
       if (!backendMessage.isNullOrBlank()) {
-        Spacer(Modifier.height(8.dp))
         Text(
           text = backendMessage,
-          color = MaterialTheme.colorScheme.error,
-          style = MaterialTheme.typography.bodyMedium,
+          style = TextStyle(fontSize = 13.sp),
+          color = IosPalette.SystemRed,
+          modifier = Modifier.padding(top = 8.dp),
         )
       }
 
-      Spacer(Modifier.height(24.dp))
       Button(
         onClick = { onVerifyCode(otp) },
         enabled = otp.length == OTP_CODE_LENGTH && !isVerifying,
-        shape = RoundedCornerShape(24.dp),
-        elevation = ButtonDefaults.buttonElevation(
-          defaultElevation = 1.dp,
-          pressedElevation = 1.dp,
-          focusedElevation = 1.dp,
-          hoveredElevation = 1.dp,
-          disabledElevation = 0.dp,
-        ),
+        shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.buttonColors(
-          containerColor = MaterialTheme.colorScheme.primary,
-          contentColor = MaterialTheme.colorScheme.onPrimary,
-          disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-          disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+          containerColor = Color.Black,
+          contentColor = Color.White,
+          disabledContainerColor = Color.Black.copy(alpha = 0.12f),
+          disabledContentColor = Color.White.copy(alpha = 0.5f),
         ),
         modifier = Modifier
           .fillMaxWidth()
-          .heightIn(min = 56.dp)
+          .padding(top = 24.dp)
+          .height(56.dp)
           .testTag("otp_verify_button"),
       ) {
         if (isVerifying) {
           CircularProgressIndicator(
             modifier = Modifier.size(16.dp),
-            color = MaterialTheme.colorScheme.onPrimary,
+            color = Color.White,
             strokeWidth = 2.dp,
           )
-          Spacer(Modifier.width(8.dp))
+        } else {
+          Text("Verify")
         }
-        Text("Verify")
       }
 
-      Spacer(Modifier.height(16.dp))
       Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(top = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
       ) {
         TextButton(
           onClick = onResendCode,
           enabled = canResend,
           colors = ButtonDefaults.textButtonColors(
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            contentColor = IosPalette.SystemBlue,
+            disabledContentColor = IosPalette.SecondaryLabel,
           ),
-          contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp),
+          contentPadding = PaddingValues(0.dp),
           modifier = Modifier
-            .heightIn(min = 48.dp)
+            .heightIn(min = 44.dp)
             .testTag("otp_resend_button"),
         ) {
-          Text("Resend code")
+          Text(
+            text = "Resend code",
+            style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium),
+          )
         }
+
+        Spacer(Modifier.weight(1f))
+
         if (resendCooldownSeconds > 0) {
           Text(
             text = "Resend in ${formatCooldownMmSs(resendCooldownSeconds)}",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium,
+            style = TextStyle(fontSize = 13.sp),
+            color = IosPalette.SecondaryLabel,
           )
         }
       }
 
-      Spacer(Modifier.height(8.dp))
       TextButton(
         onClick = onBack,
         enabled = !isVerifying,
         colors = ButtonDefaults.textButtonColors(
-          contentColor = MaterialTheme.colorScheme.onSurface,
-          disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+          contentColor = IosPalette.SystemBlue,
+          disabledContentColor = IosPalette.SecondaryLabel,
         ),
-        contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp),
+        contentPadding = PaddingValues(0.dp),
         modifier = Modifier
-          .heightIn(min = 48.dp)
+          .heightIn(min = 44.dp)
           .testTag("otp_change_email"),
       ) {
-        Text("Change email")
+        Text(
+          text = "Change email",
+          style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium),
+          modifier = Modifier.fillMaxWidth(),
+          textAlign = TextAlign.Start,
+        )
       }
+
+      Spacer(Modifier.height(24.dp))
     }
   }
 }
@@ -645,8 +784,8 @@ private fun AuthFlowTopBar(
     title = {
       Text(
         text = title,
-        style = MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.SemiBold,
+        style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
+        color = IosPalette.Label,
       )
     },
     navigationIcon = {
@@ -655,22 +794,23 @@ private fun AuthFlowTopBar(
           Box(
             modifier = Modifier
               .size(36.dp)
-              .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+              .background(IosPalette.SecondarySystemGroupedBackground, CircleShape),
             contentAlignment = Alignment.Center,
           ) {
             Icon(
               imageVector = Icons.AutoMirrored.Filled.ArrowBack,
               contentDescription = "Navigate up",
+              tint = IosPalette.Label,
             )
           }
         }
       }
     },
     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-      containerColor = MaterialTheme.colorScheme.background,
-      scrolledContainerColor = MaterialTheme.colorScheme.background,
-      titleContentColor = MaterialTheme.colorScheme.onSurface,
-      navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+      containerColor = IosPalette.SystemGroupedBackground,
+      scrolledContainerColor = IosPalette.SystemGroupedBackground,
+      titleContentColor = IosPalette.Label,
+      navigationIconContentColor = IosPalette.Label,
     ),
   )
 }
@@ -693,31 +833,26 @@ private fun OtpDigitSlots(
   ) {
     repeat(OTP_CODE_LENGTH) { index ->
       val digit = otp.getOrNull(index)?.toString().orEmpty()
-      val isActiveSlot = isInputFocused && index == activeIndex
+      val isActiveSlot = isInputFocused && index == activeIndex && otp.length < OTP_CODE_LENGTH
+
       Box(
         modifier = Modifier
           .size(52.dp)
+          .background(IosPalette.SecondarySystemGroupedBackground, RoundedCornerShape(13.dp))
           .border(
-            width = 1.dp,
-            color = when {
-              isActiveSlot -> MaterialTheme.colorScheme.primary
-              digit.isBlank() -> MaterialTheme.colorScheme.outline
-              else -> MaterialTheme.colorScheme.outline
-            },
-            shape = RoundedCornerShape(12.dp),
+            width = if (isActiveSlot) 2.dp else 1.dp,
+            color = if (isActiveSlot) IosPalette.SystemBlue else IosPalette.Separator.copy(alpha = 0.18f),
+            shape = RoundedCornerShape(13.dp),
           )
-          .background(
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            shape = RoundedCornerShape(12.dp),
-          )
-          .clickable(enabled = isInputEnabled, onClick = { focusRequester.requestFocus() })
+          .clickable(enabled = isInputEnabled) { focusRequester.requestFocus() }
           .semantics { contentDescription = otpSlotDescription(index) }
           .testTag("otp_digit_slot_$index"),
         contentAlignment = Alignment.Center,
       ) {
         Text(
           text = if (digit.isBlank()) " " else digit,
-          style = MaterialTheme.typography.titleLarge,
+          style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.SemiBold),
+          color = IosPalette.Label,
           textAlign = TextAlign.Center,
         )
       }

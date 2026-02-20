@@ -80,8 +80,11 @@ import com.example.androidtemplate.features.mypage.TransactionDetailScreen
 import com.example.androidtemplate.features.mypage.EditProfileScreen
 import com.example.androidtemplate.features.mypage.PaymentMethodScreen
 import com.example.androidtemplate.features.mypage.PlanSelectionScreen
+import com.example.androidtemplate.features.mypage.TermsScreen
+import com.example.androidtemplate.features.mypage.PrivacyScreen
 import com.example.androidtemplate.core.ui.DesignTokens
 import com.example.androidtemplate.core.ui.effectiveHorizontalPaddingPx
+import com.example.androidtemplate.ui.theme.IosPalette
 import kotlinx.coroutines.launch
 
 @Composable
@@ -175,6 +178,9 @@ private fun UnauthenticatedApp(
           otpFlowState = OtpFlowState.Idle
           navController.navigate(AppRoutes.AUTH_EMAIL)
         },
+        onViewPlans = {
+          navController.navigate(AppRoutes.PAYWALL)
+        },
       )
     }
 
@@ -217,6 +223,13 @@ private fun UnauthenticatedApp(
         },
       )
     }
+
+    composable(AppRoutes.PAYWALL) {
+      PaywallSheetRoute(
+        onClose = { navController.popBackStack() },
+        onResult = {},
+      )
+    }
   }
 }
 
@@ -247,7 +260,7 @@ private fun AuthenticatedApp(
       .fillMaxSize()
       .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
       .imePadding(),
-    containerColor = BottomNavPalette.AppBackground,
+    containerColor = IosPalette.SystemGroupedBackground,
     snackbarHost = { SnackbarHost(snackbarHostState) },
     bottomBar = {
       if (isBottomBarVisible) {
@@ -339,21 +352,9 @@ private fun AuthenticatedApp(
           syncService = billingSyncService,
           onResult = { result ->
             paywallResultMessage = when (result) {
-              is PaywallResult.Purchased -> {
-                if (result.syncStatus == PaywallSyncStatus.Synced) {
-                  "Purchased: ${result.productId}"
-                } else {
-                  "Purchased: ${result.productId} (sync failed)"
-                }
-              }
-              is PaywallResult.Restored -> {
-                if (result.syncStatus == PaywallSyncStatus.Synced) {
-                  "Restored ${result.count} purchase(s)"
-                } else {
-                  "Restored ${result.count} purchase(s) (sync failed)"
-                }
-              }
-              PaywallResult.Cancelled -> "Purchase cancelled"
+              is PaywallResult.Purchased -> "Purchased: ${result.productId}"
+              is PaywallResult.Restored -> "Purchases restored"
+              PaywallResult.Cancelled -> "Paywall closed"
               PaywallResult.Pending -> "Purchase pending"
               is PaywallResult.Failed -> result.message
             }
@@ -366,6 +367,8 @@ private fun AuthenticatedApp(
           onEditProfile = { navController.navigate(AppRoutes.MYPAGE_EDIT_PROFILE) },
           onSubscription = { navController.navigate(AppRoutes.MYPAGE_SUBSCRIPTION) },
           onPurchaseHistory = { navController.navigate(AppRoutes.MYPAGE_PURCHASE_HISTORY) },
+          onTerms = { navController.navigate(AppRoutes.MYPAGE_TERMS) },
+          onPrivacy = { navController.navigate(AppRoutes.MYPAGE_PRIVACY) },
           onLogoutCompleted = {
             coroutineScope.launch {
               when (val result = authRepository.logout()) {
@@ -389,6 +392,18 @@ private fun AuthenticatedApp(
 
       composable(AppRoutes.MYPAGE_EDIT_PROFILE) {
         EditProfileScreen(
+          onBack = { navController.popBackStack() },
+        )
+      }
+
+      composable(AppRoutes.MYPAGE_TERMS) {
+        TermsScreen(
+          onBack = { navController.popBackStack() },
+        )
+      }
+
+      composable(AppRoutes.MYPAGE_PRIVACY) {
+        PrivacyScreen(
           onBack = { navController.popBackStack() },
         )
       }
@@ -457,7 +472,6 @@ private data class BottomDestination(
 )
 
 private object BottomNavPalette {
-  val AppBackground = Color(0xFFFCFAF7)
   val NavSurface = Color(0xFFF7F3EE)
   val TopDivider = Color(0xFFE7E1D8)
   val SelectedIndicator = Color(0xFFECE5DB)

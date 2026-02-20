@@ -1,9 +1,13 @@
 package com.example.androidtemplate.features.mypage
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,15 +15,28 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,15 +44,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.androidtemplate.core.contracts.AndroidBillingContract
+import androidx.compose.ui.unit.sp
+import com.example.androidtemplate.ui.theme.IosPalette
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -44,91 +65,73 @@ fun MyPageRoute(
   onEditProfile: () -> Unit,
   onSubscription: () -> Unit,
   onPurchaseHistory: () -> Unit,
+  onTerms: () -> Unit,
+  onPrivacy: () -> Unit,
   onLogoutCompleted: () -> Unit,
   onDeleteCompleted: () -> Unit,
 ) {
   var showLogoutDialog by rememberSaveable { mutableStateOf(false) }
-  var showDeleteDialogStep1 by rememberSaveable { mutableStateOf(false) }
-  var showDeleteDialogStep2 by rememberSaveable { mutableStateOf(false) }
-  val topDialog = highestPriorityDialog(
-    isLogoutDialogVisible = showLogoutDialog,
-    isDeleteStep1DialogVisible = showDeleteDialogStep1,
-    isDeleteStep2DialogVisible = showDeleteDialogStep2,
-  )
+  var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
 
-  BackHandler(enabled = topDialog != null) {
-    when (topDialog) {
-      MyPageDialogId.DeleteStep2 -> showDeleteDialogStep2 = false
-      MyPageDialogId.DeleteStep1 -> showDeleteDialogStep1 = false
-      MyPageDialogId.Logout -> showLogoutDialog = false
-      null -> Unit
-    }
+  BackHandler(enabled = showLogoutDialog || showDeleteDialog) {
+    showLogoutDialog = false
+    showDeleteDialog = false
   }
 
   MyPageScreen(
     onEditProfile = onEditProfile,
     onSubscription = onSubscription,
     onPurchaseHistory = onPurchaseHistory,
-    onTerms = {},
-    onPrivacy = {},
+    onTerms = onTerms,
+    onPrivacy = onPrivacy,
     onLogout = { showLogoutDialog = true },
-    onDeleteAccount = { showDeleteDialogStep1 = true },
+    onDeleteAccount = { showDeleteDialog = true },
   )
 
   if (showLogoutDialog) {
     AlertDialog(
       onDismissRequest = { showLogoutDialog = false },
       confirmButton = {
-        Button(onClick = {
-          showLogoutDialog = false
-          onLogoutCompleted()
-        }) {
-          Text("Log out")
+        TextButton(
+          onClick = {
+            showLogoutDialog = false
+            onLogoutCompleted()
+          },
+        ) {
+          Text("Log out", color = IosPalette.SystemRed)
         }
       },
       dismissButton = {
-        Button(onClick = { showLogoutDialog = false }) { Text("Cancel") }
+        TextButton(onClick = { showLogoutDialog = false }) {
+          Text("Cancel", color = IosPalette.Label)
+        }
       },
-      title = { Text("Confirm logout") },
-      text = { Text("Do you want to log out?") },
+      title = { Text("Log out?", color = IosPalette.Label) },
+      containerColor = IosPalette.SecondarySystemGroupedBackground,
     )
   }
 
-  if (showDeleteDialogStep1) {
+  if (showDeleteDialog) {
     AlertDialog(
-      onDismissRequest = { showDeleteDialogStep1 = false },
+      onDismissRequest = { showDeleteDialog = false },
       confirmButton = {
-        Button(onClick = {
-          showDeleteDialogStep1 = false
-          showDeleteDialogStep2 = true
-        }) {
-          Text("Continue")
+        TextButton(
+          onClick = {
+            showDeleteDialog = false
+            onDeleteCompleted()
+          },
+        ) {
+          Text("Delete Account", color = IosPalette.SystemRed)
         }
       },
       dismissButton = {
-        Button(onClick = { showDeleteDialogStep1 = false }) { Text("Cancel") }
-      },
-      title = { Text("Delete account") },
-      text = { Text("This action cannot be undone.") },
-    )
-  }
-
-  if (showDeleteDialogStep2) {
-    AlertDialog(
-      onDismissRequest = { showDeleteDialogStep2 = false },
-      confirmButton = {
-        Button(onClick = {
-          showDeleteDialogStep2 = false
-          onDeleteCompleted()
-        }) {
-          Text("Delete now")
+        TextButton(onClick = { showDeleteDialog = false }) {
+          Text("Cancel", color = IosPalette.Label)
         }
       },
-      dismissButton = {
-        Button(onClick = { showDeleteDialogStep2 = false }) { Text("Keep account") }
-      },
-      title = { Text("Final confirmation") },
-      text = { Text("Delete account permanently?") },
+      title = { Text("Delete account?", color = IosPalette.Label) },
+      text = { Text("This action cannot be undone.", color = IosPalette.SecondaryLabel) },
+      containerColor = IosPalette.SecondarySystemGroupedBackground,
     )
   }
 }
@@ -144,23 +147,139 @@ fun MyPageScreen(
   onDeleteAccount: () -> Unit,
 ) {
   LazyColumn(
-    modifier = Modifier.fillMaxSize(),
-    verticalArrangement = Arrangement.spacedBy(8.dp),
+    modifier = Modifier
+      .fillMaxSize()
+      .background(IosPalette.SystemGroupedBackground)
+      .padding(horizontal = 20.dp)
+      .testTag("mypage_scroll"),
+    contentPadding = PaddingValues(top = 20.dp, bottom = 24.dp),
+    verticalArrangement = Arrangement.spacedBy(16.dp),
   ) {
-    item { SectionTitle("Profile") }
-    item { RowItem("Edit Profile", onClick = onEditProfile) }
+    item {
+      Text(
+        text = "My Page",
+        style = TextStyle(fontSize = 34.sp, fontWeight = FontWeight.SemiBold),
+        color = IosPalette.Label,
+      )
+    }
 
-    item { SectionTitle("Settings") }
-    item { RowItem("Subscription", onClick = onSubscription) }
-    item { RowItem("Purchase History", onClick = onPurchaseHistory) }
+    item {
+      IosSectionCard {
+        AccountHeaderRow(
+          displayName = "User",
+          email = "No email",
+        )
+      }
+    }
 
-    item { SectionTitle("Support") }
-    item { RowItem("Terms", onClick = onTerms) }
-    item { RowItem("Privacy", onClick = onPrivacy) }
+    item {
+      SectionTitle("Profile")
+      IosSectionCard {
+        NavRow(
+          text = "Edit Profile",
+          onClick = onEditProfile,
+        )
+      }
+    }
 
-    item { SectionTitle("Danger Zone") }
-    item { RowItem("Log out", onClick = onLogout, destructive = true) }
-    item { RowItem("Delete Account", onClick = onDeleteAccount, destructive = true) }
+    item {
+      SectionTitle("Settings")
+      IosSectionCard {
+        NavRow(
+          text = "Subscription",
+          onClick = onSubscription,
+        )
+        SectionDivider()
+        NavRow(
+          text = "Purchase History",
+          onClick = onPurchaseHistory,
+        )
+      }
+    }
+
+    item {
+      SectionTitle("Support")
+      IosSectionCard {
+        NavRow(
+          text = "Terms",
+          onClick = onTerms,
+        )
+        SectionDivider()
+        NavRow(
+          text = "Privacy",
+          onClick = onPrivacy,
+        )
+      }
+    }
+
+    item {
+      SectionTitle("Danger Zone")
+      IosSectionCard {
+        NavRow(
+          text = "Log out",
+          onClick = onLogout,
+          destructive = true,
+          chevron = false,
+        )
+        SectionDivider()
+        NavRow(
+          text = "Delete Account",
+          onClick = onDeleteAccount,
+          destructive = true,
+          chevron = false,
+        )
+      }
+    }
+  }
+}
+
+@Composable
+private fun AccountHeaderRow(
+  displayName: String,
+  email: String,
+) {
+  val initial = displayName.firstOrNull()?.uppercase() ?: "U"
+  Row(
+    modifier = Modifier
+      .fillMaxWidth()
+      .padding(vertical = 6.dp),
+    verticalAlignment = Alignment.CenterVertically,
+    horizontalArrangement = Arrangement.spacedBy(12.dp),
+  ) {
+    Box(
+      modifier = Modifier
+        .size(44.dp)
+        .background(IosPalette.TertiarySystemFill, CircleShape),
+      contentAlignment = Alignment.Center,
+    ) {
+      Text(
+        text = initial,
+        style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
+        color = IosPalette.SecondaryLabel,
+      )
+    }
+
+    Column(
+      modifier = Modifier.weight(1f),
+      verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+      Text(
+        text = displayName,
+        style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
+        color = IosPalette.Label,
+      )
+      Text(
+        text = email,
+        style = TextStyle(fontSize = 15.sp),
+        color = IosPalette.SecondaryLabel,
+      )
+    }
+
+    Icon(
+      imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+      contentDescription = null,
+      tint = IosPalette.TertiaryLabel,
+    )
   }
 }
 
@@ -172,64 +291,115 @@ fun SubscriptionScreen(
   onOpenStoreSubscription: () -> Unit,
 ) {
   val coroutineScope = rememberCoroutineScope()
-  var state by remember { mutableStateOf(SubscriptionState.premium()) }
+  var state by remember { mutableStateOf(SubscriptionState.premium(planName = "Premium")) }
   var showCancelDialog by rememberSaveable { mutableStateOf(false) }
 
-  Column(
-    modifier = Modifier
-      .fillMaxSize()
-      .verticalScroll(rememberScrollState())
-      .testTag("subscription_scroll"),
-    verticalArrangement = Arrangement.spacedBy(8.dp),
-  ) {
-    Text("Subscription", style = MaterialTheme.typography.headlineSmall)
-    Text("Current plan: ${state.planName}")
-    Text(
-      text = state.renewalDate?.let { "Renews on $it" } ?: "Upgrade to unlock premium features",
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    Spacer(Modifier.height(8.dp))
-    Button(onClick = onOpenPlanSelection, modifier = Modifier.fillMaxWidth()) { Text("Change Plan") }
-    Button(onClick = onOpenPaymentMethod, modifier = Modifier.fillMaxWidth()) { Text("Payment Method") }
-    Button(onClick = onOpenStoreSubscription, modifier = Modifier.fillMaxWidth()) { Text("Manage in App Store") }
-    if (state.isSubscribed) {
-      Button(
-        onClick = { showCancelDialog = true },
-        enabled = !state.isCancelling,
-        modifier = Modifier.fillMaxWidth(),
-      ) {
-        Text(if (state.isCancelling) "Cancelling..." else "Cancel Subscription")
+  Scaffold(
+    topBar = {
+      InlineTopBar(
+        title = "Subscription",
+        onBack = onBack,
+      )
+    },
+    containerColor = IosPalette.SystemGroupedBackground,
+  ) { innerPadding ->
+    LazyColumn(
+      modifier = Modifier
+        .fillMaxSize()
+        .padding(innerPadding)
+        .padding(horizontal = 20.dp)
+        .testTag("subscription_scroll"),
+      contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp),
+      verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+      item {
+        IosSectionCard {
+          Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+              text = state.planName,
+              style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
+              color = IosPalette.Label,
+            )
+            Text(
+              text = state.renewalDate?.let { "Renews on $it" } ?: "Upgrade to unlock premium features",
+              style = TextStyle(fontSize = 15.sp),
+              color = IosPalette.SecondaryLabel,
+            )
+            if (state.isSubscribed) {
+              Text(
+                text = "Active",
+                style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Medium),
+                color = IosPalette.SecondaryLabel,
+              )
+            }
+          }
+        }
+      }
+
+      item {
+        SectionTitle("Manage")
+        IosSectionCard {
+          NavRow(text = "Change Plan", onClick = onOpenPlanSelection)
+          SectionDivider()
+          NavRow(text = "Payment Method", onClick = onOpenPaymentMethod)
+          SectionDivider()
+          NavRow(text = "Manage in App Store", onClick = onOpenStoreSubscription)
+          if (state.isSubscribed) {
+            SectionDivider()
+            NavRow(
+              text = "Cancel Subscription",
+              onClick = { showCancelDialog = true },
+              destructive = true,
+              chevron = false,
+              trailing = {
+                if (state.isCancelling) {
+                  CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp,
+                    color = IosPalette.SecondaryLabel,
+                  )
+                }
+              },
+            )
+          }
+        }
+      }
+
+      item {
+        Text(
+          text = "Subscriptions are managed through your Apple ID settings.",
+          style = TextStyle(fontSize = 13.sp),
+          color = IosPalette.SecondaryLabel,
+        )
       }
     }
-    Text(
-      text = "Subscriptions are managed through your Play Store settings.",
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-      style = MaterialTheme.typography.bodyMedium,
-    )
-    Spacer(Modifier.height(16.dp))
-    Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Back") }
   }
 
   if (showCancelDialog) {
     AlertDialog(
       onDismissRequest = { showCancelDialog = false },
       confirmButton = {
-        Button(onClick = {
-          showCancelDialog = false
-          coroutineScope.launch {
-            state = SubscriptionReducer(state).onCancelRequested()
-            delay(800)
-            state = SubscriptionReducer(state).onCancelCompleted()
-          }
-        }) {
-          Text("Cancel Subscription")
+        TextButton(
+          onClick = {
+            showCancelDialog = false
+            coroutineScope.launch {
+              state = SubscriptionReducer(state).onCancelRequested()
+              delay(800)
+              state = SubscriptionReducer(state).onCancelCompleted()
+            }
+          },
+        ) {
+          Text("Cancel Subscription", color = IosPalette.SystemRed)
         }
       },
       dismissButton = {
-        Button(onClick = { showCancelDialog = false }) { Text("Keep Subscription") }
+        TextButton(onClick = { showCancelDialog = false }) {
+          Text("Keep Subscription", color = IosPalette.Label)
+        }
       },
-      title = { Text("Cancel subscription?") },
-      text = { Text("You will keep access until the current billing period ends.") },
+      title = { Text("Cancel subscription?", color = IosPalette.Label) },
+      text = { Text("You’ll keep access until the end of your billing period.", color = IosPalette.SecondaryLabel) },
+      containerColor = IosPalette.SecondarySystemGroupedBackground,
     )
   }
 }
@@ -238,23 +408,59 @@ fun SubscriptionScreen(
 fun PlanSelectionScreen(
   onBack: () -> Unit,
 ) {
-  var selectedPlanId by rememberSaveable { mutableStateOf(AndroidBillingContract.PRODUCT_IDS.first()) }
-  Column(
-    modifier = Modifier.fillMaxSize(),
-    verticalArrangement = Arrangement.spacedBy(8.dp),
-  ) {
-    Text("Change Plan", style = MaterialTheme.typography.headlineSmall)
-    AndroidBillingContract.PRODUCT_IDS.forEach { planId ->
-      Button(
-        onClick = { selectedPlanId = planId },
-        modifier = Modifier.fillMaxWidth(),
-      ) {
-        val label = if (selectedPlanId == planId) "[$planId]" else planId
-        Text(label)
+  var selectedPlanId by rememberSaveable { mutableStateOf("annual") }
+  val options = remember {
+    listOf(
+      PlanOption(id = "monthly", title = "Monthly", price = "$9.99 / month"),
+      PlanOption(id = "annual", title = "Annual", price = "$79.99 / year"),
+      PlanOption(id = "remove_ads", title = "Remove Ads", price = "$4.99"),
+      PlanOption(id = "lifetime", title = "Lifetime", price = "$99.99"),
+    )
+  }
+
+  Scaffold(
+    topBar = {
+      InlineTopBar(
+        title = "Change Plan",
+        onBack = onBack,
+      )
+    },
+    containerColor = IosPalette.SystemGroupedBackground,
+  ) { innerPadding ->
+    LazyColumn(
+      modifier = Modifier
+        .fillMaxSize()
+        .padding(innerPadding)
+        .padding(horizontal = 20.dp),
+      contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp),
+      verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+      item {
+        IosSectionCard {
+          options.forEachIndexed { index, option ->
+            NavRow(
+              text = option.title,
+              subtitle = option.price,
+              onClick = { selectedPlanId = option.id },
+              trailing = {
+                if (selectedPlanId == option.id) {
+                  Icon(
+                    imageVector = Icons.Filled.Check,
+                    contentDescription = null,
+                    tint = IosPalette.SystemBlue,
+                    modifier = Modifier.size(18.dp),
+                  )
+                }
+              },
+              chevron = false,
+            )
+            if (index != options.lastIndex) {
+              SectionDivider()
+            }
+          }
+        }
       }
     }
-    Spacer(Modifier.height(16.dp))
-    Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Back") }
   }
 }
 
@@ -262,15 +468,38 @@ fun PlanSelectionScreen(
 fun PaymentMethodScreen(
   onBack: () -> Unit,
 ) {
-  Column(
-    modifier = Modifier.fillMaxSize(),
-    verticalArrangement = Arrangement.spacedBy(8.dp),
-  ) {
-    Text("Payment Method", style = MaterialTheme.typography.headlineSmall)
-    Text("Current method: Visa •••• 4242")
-    Button(onClick = {}, modifier = Modifier.fillMaxWidth()) { Text("Add Payment Method") }
-    Spacer(Modifier.height(16.dp))
-    Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Back") }
+  Scaffold(
+    topBar = {
+      InlineTopBar(
+        title = "Payment Method",
+        onBack = onBack,
+      )
+    },
+    containerColor = IosPalette.SystemGroupedBackground,
+  ) { innerPadding ->
+    LazyColumn(
+      modifier = Modifier
+        .fillMaxSize()
+        .padding(innerPadding)
+        .padding(horizontal = 20.dp),
+      contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp),
+      verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+      item {
+        IosSectionCard {
+          LabeledValueRow(label = "Current Method", value = "Visa •••• 4242")
+        }
+      }
+      item {
+        IosSectionCard {
+          NavRow(
+            text = "Add Payment Method",
+            onClick = {},
+            chevron = false,
+          )
+        }
+      }
+    }
   }
 }
 
@@ -283,46 +512,61 @@ fun PurchaseHistoryScreen(
   var activeFilter by rememberSaveable { mutableStateOf(PurchaseFilter.All) }
   val filteredRecords = filterPurchases(records, activeFilter)
 
-  Column(
-    modifier = Modifier.fillMaxSize(),
-  ) {
-    Text("Purchase History", style = MaterialTheme.typography.headlineSmall)
-    Spacer(Modifier.height(12.dp))
-
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-      FilterButton(
-        label = "All",
-        selected = activeFilter == PurchaseFilter.All,
-        onClick = { activeFilter = PurchaseFilter.All },
+  Scaffold(
+    topBar = {
+      InlineTopBar(
+        title = "Purchase History",
+        onBack = onBack,
       )
-      FilterButton(
-        label = "Subscriptions",
-        selected = activeFilter == PurchaseFilter.Subscriptions,
-        onClick = { activeFilter = PurchaseFilter.Subscriptions },
-      )
-      FilterButton(
-        label = "One-time",
-        selected = activeFilter == PurchaseFilter.OneTime,
-        onClick = { activeFilter = PurchaseFilter.OneTime },
-      )
-    }
-
-    Spacer(Modifier.height(8.dp))
-
+    },
+    containerColor = IosPalette.SystemGroupedBackground,
+  ) { innerPadding ->
     LazyColumn(
-      modifier = Modifier.fillMaxWidth(),
-      verticalArrangement = Arrangement.spacedBy(8.dp),
+      modifier = Modifier
+        .fillMaxSize()
+        .padding(innerPadding)
+        .padding(horizontal = 20.dp),
+      contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp),
+      verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-      items(filteredRecords, key = { it.id }) { record ->
-        RowItem(
-          text = "${record.productId} · ${record.purchasedAt}",
-          onClick = { onOpenTransaction(record.id) },
-        )
+      item {
+        IosSectionCard {
+          SegmentedFilter(
+            selected = activeFilter,
+            onSelected = { activeFilter = it },
+          )
+        }
+      }
+
+      item {
+        if (filteredRecords.isEmpty()) {
+          IosSectionCard {
+            Text(
+              text = "No purchases yet.",
+              style = TextStyle(fontSize = 17.sp),
+              color = IosPalette.SecondaryLabel,
+              modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 24.dp),
+              textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+          }
+        } else {
+          IosSectionCard {
+            filteredRecords.forEachIndexed { index, record ->
+              NavRow(
+                text = record.productId,
+                subtitle = record.purchasedAt,
+                onClick = { onOpenTransaction(record.id) },
+              )
+              if (index != filteredRecords.lastIndex) {
+                SectionDivider()
+              }
+            }
+          }
+        }
       }
     }
-
-    Spacer(Modifier.height(8.dp))
-    Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Back") }
   }
 }
 
@@ -333,48 +577,114 @@ fun EditProfileScreen(
   var state by rememberSaveable {
     mutableStateOf(EditProfileState.initial(email = "user@example.com"))
   }
+  var showDeleteConfirm by rememberSaveable { mutableStateOf(false) }
 
-  Column(
-    modifier = Modifier.fillMaxSize(),
-    verticalArrangement = Arrangement.Center,
-  ) {
-    Text("Edit Profile", style = MaterialTheme.typography.headlineSmall)
-    Spacer(Modifier.height(12.dp))
-    OutlinedTextField(
-      value = state.displayName,
-      onValueChange = { value ->
-        state = EditProfileReducer(state).onDisplayNameChanged(value)
-      },
-      label = { Text("Display name") },
-      isError = state.validationError != null,
-      supportingText = {
-        if (!state.validationError.isNullOrBlank()) {
-          Text(state.validationError ?: "")
+  Scaffold(
+    topBar = {
+      InlineTopBar(
+        title = "Edit Profile",
+        onBack = onBack,
+        action = {
+          TextButton(
+            onClick = onBack,
+            enabled = state.isSaveEnabled,
+          ) {
+            Text("Save", color = if (state.isSaveEnabled) IosPalette.SystemBlue else IosPalette.SecondaryLabel)
+          }
+        },
+      )
+    },
+    containerColor = IosPalette.SystemGroupedBackground,
+  ) { innerPadding ->
+    LazyColumn(
+      modifier = Modifier
+        .fillMaxSize()
+        .padding(innerPadding)
+        .padding(horizontal = 20.dp),
+      contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp),
+      verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+      item {
+        IosSectionCard {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+          ) {
+            Box(
+              modifier = Modifier
+                .size(44.dp)
+                .background(IosPalette.TertiarySystemFill, CircleShape),
+              contentAlignment = Alignment.Center,
+            ) {
+              Text("U", color = IosPalette.SecondaryLabel, fontWeight = FontWeight.SemiBold)
+            }
+            TextButton(
+              onClick = {},
+              contentPadding = PaddingValues(0.dp),
+            ) {
+              Text("Change Photo", color = IosPalette.SystemBlue)
+            }
+          }
+        }
+      }
+
+      item {
+        SectionTitle("Profile")
+        IosSectionCard {
+          OutlinedTextField(
+            value = state.displayName,
+            onValueChange = { value ->
+              state = EditProfileReducer(state).onDisplayNameChanged(value)
+            },
+            label = { Text("Name") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            isError = state.validationError != null,
+          )
+          Spacer(Modifier.height(12.dp))
+          OutlinedTextField(
+            value = state.email,
+            onValueChange = {},
+            label = { Text("Email") },
+            singleLine = true,
+            enabled = false,
+            modifier = Modifier.fillMaxWidth(),
+          )
+        }
+      }
+
+      item {
+        SectionTitle("Danger Zone")
+        IosSectionCard {
+          NavRow(
+            text = "Delete Account",
+            onClick = { showDeleteConfirm = true },
+            destructive = true,
+            chevron = false,
+          )
+        }
+      }
+    }
+  }
+
+  if (showDeleteConfirm) {
+    AlertDialog(
+      onDismissRequest = { showDeleteConfirm = false },
+      confirmButton = {
+        TextButton(onClick = { showDeleteConfirm = false }) {
+          Text("Delete Account", color = IosPalette.SystemRed)
         }
       },
-      modifier = Modifier.fillMaxWidth(),
+      dismissButton = {
+        TextButton(onClick = { showDeleteConfirm = false }) {
+          Text("Cancel", color = IosPalette.Label)
+        }
+      },
+      title = { Text("Delete account?", color = IosPalette.Label) },
+      text = { Text("This action cannot be undone.", color = IosPalette.SecondaryLabel) },
+      containerColor = IosPalette.SecondarySystemGroupedBackground,
     )
-    Spacer(Modifier.height(8.dp))
-    OutlinedTextField(
-      value = state.email,
-      onValueChange = {},
-      readOnly = true,
-      enabled = false,
-      label = { Text("Email") },
-      modifier = Modifier.fillMaxWidth(),
-    )
-    Spacer(Modifier.height(16.dp))
-    Button(
-      onClick = {},
-      enabled = state.isSaveEnabled,
-      modifier = Modifier.fillMaxWidth(),
-    ) {
-      Text("Save")
-    }
-    Spacer(Modifier.height(8.dp))
-    Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
-      Text("Back")
-    }
   }
 }
 
@@ -383,54 +693,278 @@ fun TransactionDetailScreen(
   transactionId: String,
   onBack: () -> Unit,
 ) {
-  Column(
-    modifier = Modifier.fillMaxSize(),
-    verticalArrangement = Arrangement.Center,
-  ) {
-    Text("Transaction Detail", style = MaterialTheme.typography.headlineSmall)
-    Spacer(Modifier.height(8.dp))
-    Text("Transaction ID: $transactionId")
-    Spacer(Modifier.height(16.dp))
-    Button(onClick = {}, modifier = Modifier.fillMaxWidth()) {
-      Text("Receipt")
-    }
-    Spacer(Modifier.height(8.dp))
-    Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
-      Text("Back")
+  Scaffold(
+    topBar = {
+      InlineTopBar(
+        title = "Transaction",
+        onBack = onBack,
+      )
+    },
+    containerColor = IosPalette.SystemGroupedBackground,
+  ) { innerPadding ->
+    LazyColumn(
+      modifier = Modifier
+        .fillMaxSize()
+        .padding(innerPadding)
+        .padding(horizontal = 20.dp),
+      contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp),
+      verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+      item {
+        IosSectionCard {
+          LabeledValueRow(label = "Title", value = transactionId)
+          SectionDivider()
+          LabeledValueRow(label = "Date", value = "Feb 20, 2026")
+          SectionDivider()
+          LabeledValueRow(label = "Amount", value = "$9.99")
+          SectionDivider()
+          LabeledValueRow(label = "Type", value = "Subscription")
+          SectionDivider()
+          LabeledValueRow(label = "Status", value = "Completed")
+        }
+      }
+      item {
+        IosSectionCard {
+          NavRow(
+            text = "Get receipt",
+            onClick = {},
+            chevron = false,
+          )
+        }
+      }
     }
   }
+}
+
+@Composable
+fun TermsScreen(
+  onBack: () -> Unit,
+) {
+  Scaffold(
+    topBar = {
+      InlineTopBar(
+        title = "Terms",
+        onBack = onBack,
+      )
+    },
+    containerColor = IosPalette.SystemGroupedBackground,
+  ) { innerPadding ->
+    LazyColumn(
+      modifier = Modifier
+        .fillMaxSize()
+        .padding(innerPadding)
+        .padding(horizontal = 20.dp),
+      contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp),
+    ) {
+      item {
+        IosSectionCard {
+          Text(
+            text = "Terms of Service",
+            style = TextStyle(fontSize = 17.sp),
+            color = IosPalette.Label,
+          )
+        }
+      }
+    }
+  }
+}
+
+@Composable
+fun PrivacyScreen(
+  onBack: () -> Unit,
+) {
+  Scaffold(
+    topBar = {
+      InlineTopBar(
+        title = "Privacy",
+        onBack = onBack,
+      )
+    },
+    containerColor = IosPalette.SystemGroupedBackground,
+  ) { innerPadding ->
+    LazyColumn(
+      modifier = Modifier
+        .fillMaxSize()
+        .padding(innerPadding)
+        .padding(horizontal = 20.dp),
+      contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp),
+    ) {
+      item {
+        IosSectionCard {
+          Text(
+            text = "Privacy Policy",
+            style = TextStyle(fontSize = 17.sp),
+            color = IosPalette.Label,
+          )
+        }
+      }
+    }
+  }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun InlineTopBar(
+  title: String,
+  onBack: () -> Unit,
+  action: @Composable (() -> Unit)? = null,
+) {
+  CenterAlignedTopAppBar(
+    title = {
+      Text(
+        text = title,
+        style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
+        color = IosPalette.Label,
+      )
+    },
+    navigationIcon = {
+      IconButton(onClick = onBack) {
+        Icon(
+          imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+          contentDescription = "Back",
+          tint = IosPalette.Label,
+        )
+      }
+    },
+    actions = {
+      if (action != null) {
+        action()
+      }
+    },
+    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+      containerColor = IosPalette.SystemGroupedBackground,
+      titleContentColor = IosPalette.Label,
+      navigationIconContentColor = IosPalette.Label,
+      actionIconContentColor = IosPalette.SystemBlue,
+    ),
+  )
+}
+
+@Composable
+private fun IosSectionCard(
+  content: @Composable ColumnScope.() -> Unit,
+) {
+  Column(
+    modifier = Modifier
+      .fillMaxWidth()
+      .background(IosPalette.SecondarySystemGroupedBackground, RoundedCornerShape(16.dp))
+      .padding(horizontal = 14.dp, vertical = 8.dp),
+    content = content,
+  )
 }
 
 @Composable
 private fun SectionTitle(text: String) {
   Text(
     text = text,
-    style = MaterialTheme.typography.titleMedium,
-    fontWeight = FontWeight.SemiBold,
-    modifier = Modifier.padding(top = 16.dp),
+    style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
+    color = IosPalette.SecondaryLabel,
   )
 }
 
 @Composable
-private fun FilterButton(
+private fun SectionDivider() {
+  HorizontalDivider(
+    thickness = 1.dp,
+    color = IosPalette.Separator.copy(alpha = 0.18f),
+    modifier = Modifier.padding(start = 4.dp),
+  )
+}
+
+@Composable
+private fun LabeledValueRow(
   label: String,
-  selected: Boolean,
-  onClick: () -> Unit,
+  value: String,
 ) {
-  Button(onClick = onClick) {
+  Row(
+    modifier = Modifier
+      .fillMaxWidth()
+      .padding(vertical = 12.dp),
+    horizontalArrangement = Arrangement.SpaceBetween,
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
     Text(
-      text = if (selected) "[$label]" else label,
+      text = label,
+      style = TextStyle(fontSize = 15.sp),
+      color = IosPalette.SecondaryLabel,
+    )
+    Text(
+      text = value,
+      style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
+      color = IosPalette.Label,
     )
   }
 }
 
 @Composable
-private fun RowItem(
+private fun SegmentedFilter(
+  selected: PurchaseFilter,
+  onSelected: (PurchaseFilter) -> Unit,
+) {
+  Row(
+    modifier = Modifier
+      .fillMaxWidth()
+      .background(IosPalette.SystemGroupedBackground, RoundedCornerShape(10.dp))
+      .padding(3.dp),
+    horizontalArrangement = Arrangement.spacedBy(4.dp),
+  ) {
+    SegmentedItem(
+      text = "All",
+      selected = selected == PurchaseFilter.All,
+      onClick = { onSelected(PurchaseFilter.All) },
+      modifier = Modifier.weight(1f),
+    )
+    SegmentedItem(
+      text = "Subscriptions",
+      selected = selected == PurchaseFilter.Subscriptions,
+      onClick = { onSelected(PurchaseFilter.Subscriptions) },
+      modifier = Modifier.weight(1f),
+    )
+    SegmentedItem(
+      text = "One-time",
+      selected = selected == PurchaseFilter.OneTime,
+      onClick = { onSelected(PurchaseFilter.OneTime) },
+      modifier = Modifier.weight(1f),
+    )
+  }
+}
+
+@Composable
+private fun SegmentedItem(
+  text: String,
+  selected: Boolean,
+  onClick: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  Box(
+    modifier = modifier
+      .background(
+        color = if (selected) IosPalette.SecondarySystemGroupedBackground else Color.Transparent,
+        shape = RoundedCornerShape(8.dp),
+      )
+      .clickable(onClick = onClick)
+      .padding(vertical = 8.dp),
+    contentAlignment = Alignment.Center,
+  ) {
+    Text(
+      text = text,
+      style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Medium),
+      color = IosPalette.Label,
+    )
+  }
+}
+
+@Composable
+private fun NavRow(
   text: String,
   onClick: () -> Unit,
+  subtitle: String? = null,
   destructive: Boolean = false,
+  chevron: Boolean = true,
+  trailing: @Composable (() -> Unit)? = null,
 ) {
   val rowTag = "row_item_${text.replace(" ", "_")}"
+
   Row(
     modifier = Modifier
       .fillMaxWidth()
@@ -442,24 +976,50 @@ private fun RowItem(
         role = Role.Button
       }
       .testTag(rowTag),
-    horizontalArrangement = Arrangement.SpaceBetween,
+    verticalAlignment = Alignment.CenterVertically,
+    horizontalArrangement = Arrangement.spacedBy(12.dp),
   ) {
-    Text(
-      text = text,
-      color = if (destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onBackground,
-    )
-    Text(
-      text = ">",
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
+    Column(
+      modifier = Modifier.weight(1f),
+      verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+      Text(
+        text = text,
+        style = TextStyle(fontSize = 17.sp),
+        color = if (destructive) IosPalette.SystemRed else IosPalette.Label,
+      )
+      if (!subtitle.isNullOrBlank()) {
+        Text(
+          text = subtitle,
+          style = TextStyle(fontSize = 13.sp),
+          color = IosPalette.SecondaryLabel,
+        )
+      }
+    }
+
+    if (trailing != null) {
+      trailing()
+    } else if (chevron) {
+      Icon(
+        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+        contentDescription = null,
+        tint = IosPalette.TertiaryLabel,
+      )
+    }
   }
 }
 
+private data class PlanOption(
+  val id: String,
+  val title: String,
+  val price: String,
+)
+
 private fun samplePurchaseRecords(): List<PurchaseRecord> {
   return listOf(
-    PurchaseRecord(id = "tx_1", productId = "monthly", category = PurchaseCategory.Subscription, purchasedAt = "2026-02-01"),
-    PurchaseRecord(id = "tx_2", productId = "remove_ads", category = PurchaseCategory.OneTime, purchasedAt = "2026-02-02"),
-    PurchaseRecord(id = "tx_3", productId = "annual", category = PurchaseCategory.Subscription, purchasedAt = "2026-02-03"),
-    PurchaseRecord(id = "tx_4", productId = "lifetime", category = PurchaseCategory.OneTime, purchasedAt = "2026-02-04"),
+    PurchaseRecord(id = "tx_1", productId = "Premium Monthly", category = PurchaseCategory.Subscription, purchasedAt = "Feb 18, 2026 · $9.99"),
+    PurchaseRecord(id = "tx_2", productId = "Premium Monthly", category = PurchaseCategory.Subscription, purchasedAt = "Jan 18, 2026 · $9.99"),
+    PurchaseRecord(id = "tx_3", productId = "One-time Add-on", category = PurchaseCategory.OneTime, purchasedAt = "Jan 10, 2026 · $14.99"),
+    PurchaseRecord(id = "tx_4", productId = "Coin Pack", category = PurchaseCategory.OneTime, purchasedAt = "Dec 20, 2025 · $4.99"),
   )
 }

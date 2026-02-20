@@ -16,34 +16,38 @@ import com.example.androidtemplate.core.ui.DesignTokens
 private data class MonochromeColorRoles(
   val primary: Color,
   val onPrimary: Color,
+  val background: Color,
   val surface: Color,
   val surfaceVariant: Color,
+  val primaryContainer: Color,
   val outline: Color,
   val onSurface: Color,
   val onSurfaceVariant: Color,
 )
 
 private val MonochromeRoles = MonochromeColorRoles(
-  primary = Color(0xFF111111),
+  primary = Color(0xFF007AFF),
   onPrimary = Color(0xFFFFFFFF),
+  background = Color(0xFFF2F2F7),
   surface = Color(0xFFFFFFFF),
-  surfaceVariant = Color(0xFFF5F5F5),
-  outline = Color(0xFFE0E0E0),
+  surfaceVariant = Color(0xFFF2F2F7),
+  primaryContainer = Color(0xFFEAF2FF),
+  outline = Color(0xFFD1D1D6),
   onSurface = Color(0xFF111111),
-  onSurfaceVariant = Color(0xFF666666),
+  onSurfaceVariant = Color(0xFF6B6B70),
 )
 
 private val MonochromeColorScheme = lightColorScheme(
   primary = MonochromeRoles.primary,
   onPrimary = MonochromeRoles.onPrimary,
-  background = MonochromeRoles.surface,
+  background = MonochromeRoles.background,
   onBackground = MonochromeRoles.onSurface,
   surface = MonochromeRoles.surface,
   onSurface = MonochromeRoles.onSurface,
   surfaceVariant = MonochromeRoles.surfaceVariant,
   onSurfaceVariant = MonochromeRoles.onSurfaceVariant,
   outline = MonochromeRoles.outline,
-  primaryContainer = MonochromeRoles.surfaceVariant,
+  primaryContainer = MonochromeRoles.primaryContainer,
   onPrimaryContainer = MonochromeRoles.onSurface,
 )
 
@@ -67,7 +71,7 @@ fun AndroidTemplateTheme(
   darkTheme: Boolean = isSystemInDarkTheme(),
   content: @Composable () -> Unit,
 ) {
-  // Template policy: fixed neutral monochrome palette (no dynamic/system accent colors).
+  // iOS-first visual parity policy: fixed light palette, no dynamic Material accents.
   val resolvedColorScheme = if (darkTheme) MonochromeColorScheme else MonochromeColorScheme
   MaterialTheme(
     colorScheme = resolvedColorScheme,

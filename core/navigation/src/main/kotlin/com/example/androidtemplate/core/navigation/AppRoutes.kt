@@ -7,6 +7,8 @@ object AppRoutes {
   const val HOME = "home"
   const val MYPAGE = "mypage"
   const val MYPAGE_EDIT_PROFILE = "mypage/edit-profile"
+  const val MYPAGE_TERMS = "mypage/terms"
+  const val MYPAGE_PRIVACY = "mypage/privacy"
   const val MYPAGE_SUBSCRIPTION = "mypage/subscription"
   const val MYPAGE_PLAN_SELECTION = "mypage/subscription/plan-selection"
   const val MYPAGE_PAYMENT_METHOD = "mypage/subscription/payment-method"
