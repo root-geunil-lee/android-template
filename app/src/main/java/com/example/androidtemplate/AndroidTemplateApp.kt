@@ -18,6 +18,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -68,17 +69,18 @@ import kotlinx.coroutines.launch
 @Composable
 fun AndroidTemplateApp(
   authRepository: AuthRepositoryContract,
+  appStateViewModel: AppStateViewModel,
 ) {
-  var isAuthenticated by rememberSaveable { mutableStateOf(false) }
+  val isAuthenticated by appStateViewModel.isAuthenticated.collectAsState()
   if (isAuthenticated) {
     AuthenticatedApp(
       authRepository = authRepository,
-      onLogout = { isAuthenticated = false },
+      onLogout = appStateViewModel::onLoggedOut,
     )
   } else {
     UnauthenticatedApp(
       authRepository = authRepository,
-      onAuthenticated = { isAuthenticated = true },
+      onAuthenticated = appStateViewModel::onAuthenticated,
     )
   }
 }

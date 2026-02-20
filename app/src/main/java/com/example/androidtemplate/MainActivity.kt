@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import com.example.androidtemplate.auth.AuthCallbackBus
 import com.example.androidtemplate.features.auth.AuthRepositoryContract
 import com.example.androidtemplate.ui.theme.AndroidTemplateTheme
@@ -12,6 +13,8 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+  private val appStateViewModel by viewModels<AppStateViewModel>()
+
   @Inject
   lateinit var authRepository: AuthRepositoryContract
 
@@ -21,7 +24,10 @@ class MainActivity : ComponentActivity() {
     intent?.dataString?.let(AuthCallbackBus::emit)
     setContent {
       AndroidTemplateTheme {
-        AndroidTemplateApp(authRepository = authRepository)
+        AndroidTemplateApp(
+          authRepository = authRepository,
+          appStateViewModel = appStateViewModel,
+        )
       }
     }
   }
