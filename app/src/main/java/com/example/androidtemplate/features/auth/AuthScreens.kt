@@ -1,11 +1,19 @@
 package com.example.androidtemplate.features.auth
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -15,11 +23,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -121,6 +137,7 @@ fun OtpVerifyScreen(
 ) {
   var otp by rememberSaveable { mutableStateOf("") }
   var lastAutoSubmittedCode by rememberSaveable { mutableStateOf("") }
+  val focusRequester = remember { FocusRequester() }
 
   val backendMessage = when (state) {
     is OtpFlowState.Error -> state.message
@@ -128,8 +145,12 @@ fun OtpVerifyScreen(
     else -> null
   }
 
+  LaunchedEffect(Unit) {
+    focusRequester.requestFocus()
+  }
+
   LaunchedEffect(otp, state) {
-    if (otp.length == 6 && otp != lastAutoSubmittedCode && state != OtpFlowState.VerifyingCode) {
+    if (otp.length == OTP_CODE_LENGTH && otp != lastAutoSubmittedCode && state != OtpFlowState.VerifyingCode) {
       lastAutoSubmittedCode = otp
       onVerifyCode(otp)
     }
@@ -142,28 +163,37 @@ fun OtpVerifyScreen(
     Text("Verify OTP", style = MaterialTheme.typography.titleLarge)
     Text(email)
     Spacer(Modifier.height(16.dp))
-    OutlinedTextField(
+    BasicTextField(
       value = otp,
       onValueChange = {
-        otp = it.filter { char -> char.isDigit() }.take(6)
+        otp = sanitizeOtpInput(it)
       },
-      label = { Text("6-digit code") },
-      modifier = Modifier.fillMaxWidth(),
+      singleLine = true,
       keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-      isError = backendMessage != null,
-      supportingText = {
-        if (backendMessage != null) {
-          Text(backendMessage)
-        } else {
-          Text("Auto-verify triggers at 6 digits")
-        }
+      modifier = Modifier
+        .focusRequester(focusRequester)
+        .size(1.dp)
+        .alpha(0f)
+        .testTag("otp_hidden_input"),
+    )
+    OtpDigitSlots(
+      otp = otp,
+      focusRequester = focusRequester,
+    )
+    Spacer(Modifier.height(8.dp))
+    Text(
+      text = backendMessage ?: "Auto-verify triggers at 6 digits",
+      color = if (backendMessage != null) {
+        MaterialTheme.colorScheme.error
+      } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
       },
     )
 
     Spacer(Modifier.height(12.dp))
     Button(
       onClick = { onVerifyCode(otp) },
-      enabled = otp.length == 6 && state != OtpFlowState.VerifyingCode,
+      enabled = otp.length == OTP_CODE_LENGTH && state != OtpFlowState.VerifyingCode,
       modifier = Modifier.fillMaxWidth(),
     ) {
       Text(if (state == OtpFlowState.VerifyingCode) "Verifying..." else "Verify")
@@ -171,5 +201,43 @@ fun OtpVerifyScreen(
 
     Spacer(Modifier.height(8.dp))
     Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Back") }
+  }
+}
+
+@Composable
+private fun OtpDigitSlots(
+  otp: String,
+  focusRequester: FocusRequester,
+) {
+  Row(
+    modifier = Modifier.fillMaxWidth(),
+    horizontalArrangement = Arrangement.spacedBy(8.dp),
+  ) {
+    repeat(OTP_CODE_LENGTH) { index ->
+      val digit = otp.getOrNull(index)?.toString().orEmpty()
+      Box(
+        modifier = Modifier
+          .size(52.dp)
+          .border(
+            width = 1.dp,
+            color = if (digit.isBlank()) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.primary,
+            shape = RoundedCornerShape(12.dp),
+          )
+          .background(
+            color = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(12.dp),
+          )
+          .clickable(onClick = { focusRequester.requestFocus() })
+          .semantics { contentDescription = otpSlotDescription(index) }
+          .testTag("otp_digit_slot_$index"),
+        contentAlignment = Alignment.Center,
+      ) {
+        Text(
+          text = if (digit.isBlank()) " " else digit,
+          style = MaterialTheme.typography.titleLarge,
+          textAlign = TextAlign.Center,
+        )
+      }
+    }
   }
 }
