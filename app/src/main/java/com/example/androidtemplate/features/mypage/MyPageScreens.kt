@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -147,19 +148,77 @@ fun SubscriptionScreen(onBack: () -> Unit) {
 }
 
 @Composable
-fun PurchaseHistoryScreen(onBack: () -> Unit) {
+fun PurchaseHistoryScreen(
+  onBack: () -> Unit,
+  onOpenTransaction: (String) -> Unit,
+) {
+  val records = samplePurchaseRecords()
+  var activeFilter by rememberSaveable { mutableStateOf(PurchaseFilter.All) }
+  val filteredRecords = filterPurchases(records, activeFilter)
+
+  Column(
+    modifier = Modifier.fillMaxSize(),
+  ) {
+    Text("Purchase History", style = MaterialTheme.typography.headlineSmall)
+    Spacer(Modifier.height(12.dp))
+
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+      FilterButton(
+        label = "All",
+        selected = activeFilter == PurchaseFilter.All,
+        onClick = { activeFilter = PurchaseFilter.All },
+      )
+      FilterButton(
+        label = "Subscriptions",
+        selected = activeFilter == PurchaseFilter.Subscriptions,
+        onClick = { activeFilter = PurchaseFilter.Subscriptions },
+      )
+      FilterButton(
+        label = "One-time",
+        selected = activeFilter == PurchaseFilter.OneTime,
+        onClick = { activeFilter = PurchaseFilter.OneTime },
+      )
+    }
+
+    Spacer(Modifier.height(8.dp))
+
+    LazyColumn(
+      modifier = Modifier.fillMaxWidth(),
+      verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+      items(filteredRecords, key = { it.id }) { record ->
+        RowItem(
+          text = "${record.productId} · ${record.purchasedAt}",
+          onClick = { onOpenTransaction(record.id) },
+        )
+      }
+    }
+
+    Spacer(Modifier.height(8.dp))
+    Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Back") }
+  }
+}
+
+@Composable
+fun TransactionDetailScreen(
+  transactionId: String,
+  onBack: () -> Unit,
+) {
   Column(
     modifier = Modifier.fillMaxSize(),
     verticalArrangement = Arrangement.Center,
   ) {
-    Text("Purchase History", style = MaterialTheme.typography.headlineSmall)
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-      Text("All")
-      Text("Subscriptions")
-      Text("One-time")
-    }
+    Text("Transaction Detail", style = MaterialTheme.typography.headlineSmall)
+    Spacer(Modifier.height(8.dp))
+    Text("Transaction ID: $transactionId")
     Spacer(Modifier.height(16.dp))
-    Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Back") }
+    Button(onClick = {}, modifier = Modifier.fillMaxWidth()) {
+      Text("Receipt")
+    }
+    Spacer(Modifier.height(8.dp))
+    Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
+      Text("Back")
+    }
   }
 }
 
@@ -171,6 +230,19 @@ private fun SectionTitle(text: String) {
     fontWeight = FontWeight.SemiBold,
     modifier = Modifier.padding(top = 16.dp),
   )
+}
+
+@Composable
+private fun FilterButton(
+  label: String,
+  selected: Boolean,
+  onClick: () -> Unit,
+) {
+  Button(onClick = onClick) {
+    Text(
+      text = if (selected) "[$label]" else label,
+    )
+  }
 }
 
 @Composable
@@ -195,4 +267,13 @@ private fun RowItem(
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
   }
+}
+
+private fun samplePurchaseRecords(): List<PurchaseRecord> {
+  return listOf(
+    PurchaseRecord(id = "tx_1", productId = "monthly", category = PurchaseCategory.Subscription, purchasedAt = "2026-02-01"),
+    PurchaseRecord(id = "tx_2", productId = "remove_ads", category = PurchaseCategory.OneTime, purchasedAt = "2026-02-02"),
+    PurchaseRecord(id = "tx_3", productId = "annual", category = PurchaseCategory.Subscription, purchasedAt = "2026-02-03"),
+    PurchaseRecord(id = "tx_4", productId = "lifetime", category = PurchaseCategory.OneTime, purchasedAt = "2026-02-04"),
+  )
 }

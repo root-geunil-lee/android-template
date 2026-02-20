@@ -44,6 +44,7 @@ import com.example.androidtemplate.features.home.HomeScreen
 import com.example.androidtemplate.features.mypage.MyPageRoute
 import com.example.androidtemplate.features.mypage.PurchaseHistoryScreen
 import com.example.androidtemplate.features.mypage.SubscriptionScreen
+import com.example.androidtemplate.features.mypage.TransactionDetailScreen
 import kotlinx.coroutines.launch
 
 @Composable
@@ -197,12 +198,26 @@ private fun AuthenticatedApp(onLogout: () -> Unit) {
       composable(AppRoutes.MYPAGE_PURCHASE_HISTORY) {
         PurchaseHistoryScreen(
           onBack = { navController.popBackStack() },
+          onOpenTransaction = { transactionId ->
+            navController.navigate("mypage/transaction/$transactionId")
+          },
+        )
+      }
+
+      composable(
+        route = AppRoutes.MYPAGE_TRANSACTION_DETAIL,
+        arguments = listOf(navArgument("id") { type = NavType.StringType }),
+      ) { backStackEntry ->
+        val transactionId = backStackEntry.arguments?.getString("id").orEmpty()
+        TransactionDetailScreen(
+          transactionId = transactionId,
+          onBack = { navController.popBackStack() },
         )
       }
     }
   }
 
-  if (currentRoute !in listOf(AppRoutes.HOME, AppRoutes.MYPAGE, AppRoutes.MYPAGE_SUBSCRIPTION, AppRoutes.MYPAGE_PURCHASE_HISTORY, AppRoutes.PAYWALL)) {
+  if (currentRoute !in listOf(AppRoutes.HOME, AppRoutes.MYPAGE, AppRoutes.MYPAGE_SUBSCRIPTION, AppRoutes.MYPAGE_PURCHASE_HISTORY, AppRoutes.MYPAGE_TRANSACTION_DETAIL, AppRoutes.PAYWALL)) {
     Button(onClick = { navController.navigate(AppRoutes.HOME) }) {
       Text("Go Home")
     }

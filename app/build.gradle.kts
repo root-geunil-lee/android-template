@@ -54,6 +54,7 @@ dependencies {
   implementation(project(":core:ui"))
   implementation(project(":features:auth"))
   implementation(project(":features:billing"))
+  implementation(project(":features:mypage"))
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.lifecycle.runtime.ktx)
