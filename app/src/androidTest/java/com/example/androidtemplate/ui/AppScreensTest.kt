@@ -25,6 +25,7 @@ import com.example.androidtemplate.features.auth.EmailSignInScreen
 import com.example.androidtemplate.features.auth.OtpFlowState
 import com.example.androidtemplate.features.auth.OtpVerifyScreen
 import com.example.androidtemplate.features.auth.OAuthFlowState
+import com.example.androidtemplate.features.home.HomeScreen
 import com.example.androidtemplate.features.mypage.MyPageScreen
 import com.example.androidtemplate.features.mypage.SubscriptionScreen
 import androidx.compose.ui.unit.dp
@@ -245,6 +246,25 @@ class AppScreensTest {
     composeRule.onNodeWithText("Purchase History").assertIsDisplayed()
     composeRule.onNodeWithText("Log out").assertIsDisplayed()
     composeRule.onNodeWithText("Delete Account").assertIsDisplayed()
+  }
+
+  @Test
+  fun homeScreen_matchesRequiredInformationArchitecture() {
+    composeRule.setContent {
+      HomeScreen(
+        onOpenPaywall = {},
+        paywallResultMessage = null,
+      )
+    }
+
+    composeRule.onNodeWithText("Home").assertIsDisplayed()
+    composeRule.onNodeWithText("Upgrade").assertIsDisplayed().assertHasClickAction()
+    composeRule.onNodeWithText("Core Features").assertIsDisplayed()
+    composeRule.onNodeWithText("Feed").assertIsDisplayed()
+    composeRule.onNodeWithText("Chat").assertIsDisplayed()
+    composeRule.onNodeWithText("Tools").assertIsDisplayed()
+    composeRule.onNodeWithText("Tasks").assertIsDisplayed()
+    composeRule.onAllNodesWithText("Template module").assertCountEquals(4)
   }
 
   @Test
